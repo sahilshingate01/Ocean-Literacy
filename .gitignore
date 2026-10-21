@@ -1,0 +1,63 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Production and distribution build artifacts
+dist/
+build/
+release/
+out/
+bin/
+*.app/
+*.dmg
+*.exe
+*.zip
+*.tar.gz
+*.AppImage
+*.deb
+*.rpm
+*.snap
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor directories
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Cache directories
+.cache/
+.npm/
+.eslintcache
