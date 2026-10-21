@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:;">
+  <title>Ocean Literacy — Marine Science & Exploration Desktop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/variables.css">
+  <link rel="stylesheet" href="styles/app.css">
+</head>
+<body class="ocean-theme">
+  <!-- Dynamic Ambient Particle Canvas -->
+  <canvas id="ambientCanvas" class="ambient-canvas"></canvas>
+
+  <div class="app-container">
+    <!-- Desktop Titlebar (Mac traffic lights margin + window drag region) -->
+    <header class="app-titlebar" id="appTitlebar">
+      <div class="titlebar-drag-region">
+        <div class="titlebar-brand">
+          <svg class="brand-mini-icon" viewBox="0 0 512 512">
+            <use href="#icon-ocean-crest"></use>
+          </svg>
+          <span class="brand-title">Ocean Literacy</span>
+          <span class="brand-tag">UNESCO Marine Studio</span>
+        </div>
+      </div>
+
+      <div class="titlebar-quickstats">
+        <div class="stat-pill" title="Ocean coverage of Earth's surface">
+          <span class="stat-dot cyan"></span>
+          <span class="stat-label">Coverage:</span>
+          <span class="stat-value">70.8%</span>
+        </div>
+        <div class="stat-pill" title="Estimated ocean volume">
+          <span class="stat-dot teal"></span>
+          <span class="stat-label">Volume:</span>
+          <span class="stat-value">1.335B km³</span>
+        </div>
+        <div class="stat-pill" title="Known Marine Species">
+          <span class="stat-dot emerald"></span>
+          <span class="stat-label">Species:</span>
+          <span class="stat-value">~243,000</span>
+        </div>
+      </div>
+
+      <div class="titlebar-actions">
+        <button id="btnSoundscape" class="icon-btn" title="Toggle Ocean Audio Atmosphere">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path id="soundIconPath" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          </svg>
+          <span class="btn-text">Atmosphere</span>
+        </button>
+
+        <button id="btnSearchTrigger" class="icon-btn search-trigger" title="Quick Search (Cmd/Ctrl + K)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <span class="shortcut-key">⌘K</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <!-- Navigation Sidebar -->
+      <aside class="app-sidebar" id="appSidebar">
+        <div class="sidebar-header">
+          <div class="nav-section-title">EXPLORATION MODULES</div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="principles" id="nav-principles">
+            <span class="nav-icon">🌊</span>
+            <span class="nav-text">7 Ocean Principles</span>
+            <span class="nav-badge">7</span>
+          </button>
+
+          <button class="nav-item" data-view="depth" id="nav-depth">
+            <span class="nav-icon">⚓</span>
+            <span class="nav-text">Depth Zones Simulator</span>
+            <span class="nav-badge">11km</span>
+          </button>
+
+          <button class="nav-item" data-view="marine" id="nav-marine">
+            <span class="nav-icon">🐋</span>
+            <span class="nav-text">Marine Encyclopedia</span>
+            <span class="nav-badge">24</span>
+          </button>
+
+          <button class="nav-item" data-view="climate" id="nav-climate">
+            <span class="nav-icon">🌀</span>
+            <span class="nav-text">Climate & Currents</span>
+            <span class="nav-badge">Sim</span>
+          </button>
+
+          <button class="nav-item" data-view="conservation" id="nav-conservation">
+            <span class="nav-icon">🛡️</span>
+            <span class="nav-text">Conservation Tracker</span>
+            <span class="nav-badge">30x30</span>
+          </button>
+
+          <button class="nav-item" data-view="quiz" id="nav-quiz">
+            <span class="nav-icon">🎓</span>
+            <span class="nav-text">Steward Assessment</span>
+            <span class="nav-badge">Cert</span>
+          </button>
+
+          <div class="nav-divider"></div>
+          <div class="nav-section-title">DESKTOP SYSTEM</div>
+
+          <button class="nav-item" data-view="about" id="nav-about">
+            <span class="nav-icon">ℹ️</span>
+            <span class="nav-text">About & Architecture</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="steward-badge-card">
+            <div class="badge-icon">🪸</div>
+            <div class="badge-info">
+              <span class="badge-title">Ocean Steward Status</span>
+              <span class="badge-subtitle" id="stewardStatusLabel">Explorer (Level 1)</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Dynamic Content Workspace -->
+      <main class="app-main" id="appMain">
+        <!-- View containers dynamically rendered by JS modules -->
+        <section class="view-panel active" id="view-principles"></section>
+        <section class="view-panel" id="view-depth"></section>
+        <section class="view-panel" id="view-marine"></section>
+        <section class="view-panel" id="view-climate"></section>
+        <section class="view-panel" id="view-conservation"></section>
+        <section class="view-panel" id="view-quiz"></section>
+        <section class="view-panel" id="view-about"></section>
+      </main>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <footer class="app-statusbar">
+      <div class="status-left">
+        <span class="status-indicator online"></span>
+        <span class="status-text" id="statusMessage">Desktop Ready — UNESCO Ocean Decade 2021-2030</span>
+      </div>
+      <div class="status-center">
+        <span class="status-sub">One Global Ocean, One Connected Planet</span>
+      </div>
+      <div class="status-right">
+        <span class="status-meta" id="desktopPlatformLabel">Electron Native Desktop</span>
+        <button id="btnQuickExport" class="status-action-btn" title="Export Certified Steward Certificate">Export Diploma</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Quick Search Modal -->
+  <div class="modal-overlay" id="searchModal" hidden>
+    <div class="search-modal-card">
+      <div class="search-input-wrapper">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        <input type="text" id="globalSearchInput" placeholder="Search principles, ocean depth zones, marine species, threats..." autocomplete="off">
+        <button id="btnCloseSearch" class="btn-close-modal">Esc</button>
+      </div>
+      <div class="search-results-list" id="searchResultsList">
+        <!-- Live search matches populated here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Deep Dive Detail Drawer / Modal -->
+  <div class="drawer-overlay" id="detailDrawer" hidden>
+    <div class="drawer-card">
+      <div class="drawer-header">
+        <div class="drawer-tag" id="drawerTag">MODULE DETAIL</div>
+        <button id="btnCloseDrawer" class="btn-close-drawer">✕</button>
+      </div>
+      <div class="drawer-body" id="drawerBody">
+        <!-- Rendered detail content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG Sprite Definitions -->
+  <svg style="display: none;">
+    <defs>
+      <g id="icon-ocean-crest">
+        <circle cx="256" cy="256" r="240" fill="#0c1c36" stroke="#00f2fe" stroke-width="20" />
+        <path d="M 120 280 C 160 210, 230 190, 290 230 C 330 255, 360 240, 390 210 C 370 290, 330 360, 256 360 C 190 360, 140 320, 120 280 Z" fill="#00f2fe" />
+        <polygon points="256,130 266,165 301,175 266,185 256,220 246,185 211,175 246,165" fill="#ffffff" />
+      </g>
+    </defs>
+  </svg>
+
+  <!-- Core Scripts -->
+  <script src="js/data/principles.js"></script>
+  <script src="js/data/depthZones.js"></script>
+  <script src="js/data/marineLife.js"></script>
+  <script src="js/modules/soundscape.js"></script>
+  <script src="js/modules/principlesModule.js"></script>
+  <script src="js/modules/depthModule.js"></script>
+  <script src="js/modules/marineModule.js"></script>
+  <script src="js/modules/climateModule.js"></script>
+  <script src="js/modules/conservationModule.js"></script>
+  <script src="js/modules/quizModule.js"></script>
+  <script src="js/modules/aboutModule.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
