@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#040D21" />
+      <stop offset="50%" stop-color="#0B2545" />
+      <stop offset="100%" stop-color="#001833" />
+    </linearGradient>
+    <linearGradient id="wave1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#4FACFE" />
+    </linearGradient>
+    <linearGradient id="wave2Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C9FF" />
+      <stop offset="100%" stop-color="#92FE9D" />
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38EF7D" />
+      <stop offset="50%" stop-color="#11998E" />
+      <stop offset="100%" stop-color="#00F2FE" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Outer Illuminated Ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="url(#ringGrad)" stroke-width="4" opacity="0.4" stroke-dasharray="12 8" />
+  <circle cx="256" cy="256" r="165" fill="none" stroke="#4FACFE" stroke-width="2" opacity="0.3" />
+
+  <!-- Latitude/Longitude Coordinates Grid -->
+  <ellipse cx="256" cy="256" rx="140" ry="60" fill="none" stroke="#00F2FE" stroke-width="1.5" opacity="0.25" />
+  <line x1="256" y1="116" x2="256" y2="396" stroke="#00F2FE" stroke-width="1.5" opacity="0.25" />
+  <line x1="116" y1="256" x2="396" y2="256" stroke="#00F2FE" stroke-width="1.5" opacity="0.25" />
+
+  <!-- Bioluminescent Ocean Depth Layers -->
+  <path d="M 130 330 C 180 290, 240 370, 310 320 C 350 290, 370 310, 385 335 C 365 375, 315 410, 256 410 C 197 410, 147 375, 130 330 Z" fill="#0052D4" opacity="0.6" />
+  
+  <!-- Primary Tidal Surge Wave (Stylized Crest) -->
+  <path d="M 120 280 C 160 210, 230 190, 290 230 C 330 255, 360 240, 390 210 C 370 290, 330 360, 256 360 C 190 360, 140 320, 120 280 Z" fill="url(#wave1Grad)" opacity="0.85" filter="url(#glow)" />
+  
+  <!-- Secondary Front Wave Crest -->
+  <path d="M 140 260 C 180 180, 240 170, 280 210 C 310 240, 340 230, 370 200 C 350 250, 320 290, 270 300 C 210 310, 165 295, 140 260 Z" fill="url(#wave2Grad)" opacity="0.9" />
+
+  <!-- Bioluminescent Marine Sparkles -->
+  <circle cx="210" cy="180" r="5" fill="#FFFFFF" filter="url(#glow)" />
+  <circle cx="320" cy="190" r="3.5" fill="#92FE9D" filter="url(#glow)" />
+  <circle cx="160" cy="220" r="3" fill="#00F2FE" />
+  <circle cx="340" cy="250" r="4" fill="#FFFFFF" filter="url(#glow)" />
+  <circle cx="230" cy="280" r="3.5" fill="#38EF7D" />
+
+  <!-- Center Guidance Star (Ocean Literacy Compass Rose) -->
+  <polygon points="256,130 266,165 301,175 266,185 256,220 246,185 211,175 246,165" fill="#FFFFFF" filter="url(#glow)" />
+  <circle cx="256" cy="175" r="3" fill="#00F2FE" />
+</svg>
