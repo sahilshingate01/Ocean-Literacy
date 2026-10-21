@@ -1,0 +1,49 @@
+{
+  "name": "ocean-literacy-desktop",
+  "version": "1.0.0",
+  "description": "An interactive, visual desktop application dedicated to exploring the 7 essential principles of Ocean Literacy, marine ecosystems, and ocean conservation.",
+  "main": "src/main/main.js",
+  "author": {
+    "name": "Sahil Shingate",
+    "email": "sahilshingate0@gmail.com",
+    "url": "https://github.com/sahilshingate01"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/sahilshingate01/Ocean-Literacy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sahilshingate01/Ocean-Literacy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sahilshingate01/Ocean-Literacy/issues"
+  },
+  "keywords": [
+    "ocean-literacy",
+    "marine-biology",
+    "educational-desktop-app",
+    "electron",
+    "ocean-conservation",
+    "unesco-ocean",
+    "climate-science"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node test/app.test.js",
+    "verify": "node scripts/verify-setup.js",
+    "build": "node scripts/build-desktop.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:mac-arm": "electron-builder --mac --arm64",
+    "dist:mac-intel": "electron-builder --mac --x64",
+    "dist:win": "electron-builder --win --x64",
+    "dist:linux": "electron-builder --linux --x64",
+    "dist:all": "electron-builder -mwl"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  }
+}
