@@ -1,0 +1,26 @@
+name: Test & Verify
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Generate Branding Assets
+        run: node scripts/generate-icons.js
+
+      - name: Run Test Suite
+        run: node test/app.test.js
