@@ -6,6 +6,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Initialize Subsystems
   initAmbientCanvas();
+  if (typeof GameModule !== 'undefined' && GameModule.init) {
+    GameModule.init();
+  }
   PrinciplesModule.init();
   DepthModule.init();
   MarineModule.init();
@@ -92,15 +95,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const matches = [];
 
+    // Search simulation scenarios
+    if (window.OCEAN_GAME_DATA && Array.isArray(window.OCEAN_GAME_DATA.SCENARIOS)) {
+      window.OCEAN_GAME_DATA.SCENARIOS.forEach(s => {
+        if (!q || s.title.toLowerCase().includes(q) || s.region.toLowerCase().includes(q) || s.serviceLabel.toLowerCase().includes(q)) {
+          matches.push({ type: 'Mission', title: `Mission: ${s.title} (${s.region})`, action: () => {
+            navigateTo('missions');
+            if (typeof GameModule !== 'undefined' && GameModule.launchMission) {
+              GameModule.launchMission(s.id);
+            }
+          }});
+        }
+      });
+    }
+
+    // Search simulation roles
+    if (window.OCEAN_GAME_DATA && Array.isArray(window.OCEAN_GAME_DATA.ROLES)) {
+      window.OCEAN_GAME_DATA.ROLES.forEach(r => {
+        if (!q || r.title.toLowerCase().includes(q) || r.shortDesc.toLowerCase().includes(q)) {
+          matches.push({ type: 'Role', title: `Ocean Role: ${r.title} (${r.category})`, action: () => {
+            navigateTo('missions');
+            if (typeof GameModule !== 'undefined' && GameModule.setActiveRole) {
+              GameModule.setActiveRole(r.id);
+            }
+          }});
+        }
+      });
+    }
+
     // Search principles
-    window.OCEAN_PRINCIPLES.forEach(p => {
-      if (!q || p.title.toLowerCase().includes(q) || p.shortDesc.toLowerCase().includes(q)) {
-        matches.push({ type: 'Principle', title: `Principle 0${p.number}: ${p.title}`, action: () => {
-          navigateTo('principles');
-          PrinciplesModule.openPrincipleDetail(p.id);
-        }});
-      }
-    });
+    if (Array.isArray(window.OCEAN_PRINCIPLES)) {
+      window.OCEAN_PRINCIPLES.forEach(p => {
+        if (!q || p.title.toLowerCase().includes(q) || p.shortDesc.toLowerCase().includes(q)) {
+          matches.push({ type: 'Principle', title: `Principle 0${p.number}: ${p.title}`, action: () => {
+            navigateTo('principles');
+            PrinciplesModule.openPrincipleDetail(p.id);
+          }});
+        }
+      });
+    }
 
     // Search depth zones
     window.OCEAN_DEPTH_ZONES.forEach(z => {

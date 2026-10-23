@@ -67,11 +67,20 @@
       <!-- Navigation Sidebar -->
       <aside class="app-sidebar" id="appSidebar">
         <div class="sidebar-header">
-          <div class="nav-section-title">EXPLORATION MODULES</div>
+          <div class="nav-section-title">GAMIFIED SIMULATION</div>
         </div>
 
         <nav class="sidebar-nav">
-          <button class="nav-item active" data-view="principles" id="nav-principles">
+          <button class="nav-item active" data-view="missions" id="nav-missions">
+            <span class="nav-icon">🎮</span>
+            <span class="nav-text">Ocean Missions</span>
+            <span class="nav-badge">15</span>
+          </button>
+
+          <div class="nav-divider"></div>
+          <div class="nav-section-title">EXPLORATION &amp; LEARNING</div>
+
+          <button class="nav-item" data-view="principles" id="nav-principles">
             <span class="nav-icon">🌊</span>
             <span class="nav-text">7 Ocean Principles</span>
             <span class="nav-badge">7</span>
@@ -130,7 +139,8 @@
       <!-- Main Dynamic Content Workspace -->
       <main class="app-main" id="appMain">
         <!-- View containers dynamically rendered by JS modules -->
-        <section class="view-panel active" id="view-principles"></section>
+        <section class="view-panel active" id="view-missions"></section>
+        <section class="view-panel" id="view-principles"></section>
         <section class="view-panel" id="view-depth"></section>
         <section class="view-panel" id="view-marine"></section>
         <section class="view-panel" id="view-climate"></section>
@@ -208,6 +218,13 @@
   <script src="js/modules/conservationModule.js"></script>
   <script src="js/modules/quizModule.js"></script>
   <script src="js/modules/aboutModule.js"></script>
+  <!-- Gamified Simulation Core -->
+  <script src="js/data/gameScenarios.js"></script>
+  <script src="js/modules/gameLogic.js"></script>
+  <script src="js/modules/gameStorage.js"></script>
+  <script src="js/modules/gameModule.js"></script>
+
+  <!-- Application Orchestrator -->
   <script src="js/app.js"></script>
 </body>
 </html>

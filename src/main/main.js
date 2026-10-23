@@ -121,6 +121,11 @@ function createApplicationMenu() {
       label: 'Explore',
       submenu: [
         {
+          label: 'Ocean Missions (Play)',
+          accelerator: 'CmdOrCtrl+0',
+          click: () => mainWindow?.webContents.send('ocean:navigate', 'missions')
+        },
+        {
           label: '7 Ocean Principles',
           accelerator: 'CmdOrCtrl+1',
           click: () => mainWindow?.webContents.send('ocean:navigate', 'principles')
@@ -235,6 +240,14 @@ function createSystemTray() {
           } else {
             createMainWindow();
           }
+        }
+      },
+      {
+        label: 'Play Ocean Missions',
+        click: () => {
+          if (!mainWindow) createMainWindow();
+          mainWindow.show();
+          mainWindow.webContents.send('ocean:navigate', 'missions');
         }
       },
       {
