@@ -1,14 +1,14 @@
 <div align="center">
 
-# 🌊 Ocean Literacy Desktop
+# 🌊 Ocean Literacy: Gamified Maritime Operations (Phase 1 MVP)
 
-**An Interactive Marine Science & Exploration Desktop Application**  
-*Dedicated to the United Nations Decade of Ocean Science for Sustainable Development (2021–2030)*
+**An Interactive Gamified Ocean Literacy & Decision Simulation Application**  
+*Aligned with the Smart India Hackathon problem statement from the Ministry of Earth Sciences (MoES) and INCOIS*
 
 [![CI Status](https://github.com/sahilshingate01/Ocean-Literacy/actions/workflows/verify-test.yml/badge.svg)](https://github.com/sahilshingate01/Ocean-Literacy/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Electron](https://img.shields.io/badge/Electron-v33.2.1-47848F.svg)](https://www.electronjs.org/)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)]()
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-lightgrey.svg)]()
 
 </div>
 
@@ -16,126 +16,214 @@
 
 ## 📖 Overview
 
-**Ocean Literacy** is an open-source, production-grade desktop application engineered to cultivate deep ocean awareness, planetary marine science comprehension, and active conservation stewardship.
+**Ocean Literacy** is an interactive, gamified decision-making application designed to educate citizens, students, and maritime stakeholders by allowing them to step into real-world ocean roles. Players inspect simulated oceanographic data services from the **Indian National Centre for Ocean Information Services (INCOIS)**, evaluate environmental conditions, commit operational decisions, earn experience points (XP), unlock achievements, and climb local leaderboards.
 
-Built upon the official scientific framework established by the **UNESCO Intergovernmental Oceanographic Commission (IOC)** and the **Ocean Literacy Network**, this application translates complex oceanographic data into rich, intuitive visual experiences.
+Instead of functioning solely as an encyclopedia or static quiz, Ocean Literacy teaches responsible, safety-first ocean practices through gameplay.
+
+> [!WARNING]
+> **SIMULATION NOTICE:**  
+> All scenario telemetry, forecasts, advisories, and metrics provided in Phase 1 are **educational simulation data**, not live INCOIS information. Never use this simulation for real-world maritime navigation, fishing, or coastal emergency safety decisions.
 
 ---
 
-## ✨ Exploration Modules
+## 🎮 Five Playable Roles
 
-| Module | Description | Core Capabilities |
+Players can select from five distinct operational roles across Indian coastal and Indian Ocean regions:
+
+| Role | Title | Core Mandate & Key Simulated Services |
 | :--- | :--- | :--- |
-| **🌊 7 Ocean Principles** | The fundamental UNESCO scientific framework | Interactive cards, case studies (The Great Ocean Conveyor, Deep Hydrothermal Oasis), core tenets. |
-| **⚓ Depth Zones Simulator** | Bathymetric vertical water column explorer | Submersible dive simulator from surface (0m) to Challenger Deep (11,000m) with real-time pressure, temperature, and light telemetry. |
-| **🐋 Marine Life Encyclopedia** | Taxonomy & evolutionary adaptations | Specimen dossiers across all marine phyla, IUCN Red List status badges, and food web connections. |
-| **🌀 Climate & Currents** | Thermodynamic heat & carbon engine | Interactive ocean acidification model (pH vs CO₂ ppm), aragonite saturation gauge, and major ocean current maps. |
-| **🛡️ Conservation Tracker** | Anthropogenic threats & 30x30 target | Plastic pollution monitor, overfishing metrics, marine heatwaves, and interactive personal steward pledge checklist. |
-| **🎓 Steward Assessment** | Certification & Knowledge Evaluation | 10-question comprehensive assessment with automatic rendering of an exportable High-Resolution Certificate of Ocean Stewardship. |
+| 🎣 | **Fisher** | Operates coastal motorized vessels. Uses simulated **Potential Fishing Zone (PFZ)** advisories, **Ocean State Forecasts (OSF)**, and small-craft safety warnings. Teaches that a rich PFZ does not guarantee sea safety—never sail into squalls or high waves for fish. |
+| 🚢 | **Ship Captain** | Navigates merchant vessels and ferries along coastal shipping corridors. Interprets wave spectra, swell periods, surface currents, and monsoon drift alerts to chart safe passages, avoid lee shores, and maneuver around tropical depressions. |
+| 🏖️ | **Coastal Tourism Operator** | Manages tourist beaches and water sports (jet skis, banana boats, scuba diving). Monitors **Kallakkadal (Swell Surge) Early Warnings**, rip current alerts, and thermocline shifts to enforce bathing zones and close beaches before deceptive swells strike. |
+| 🛡️ | **Coastal Community Volunteer** | First responder for coastal settlements. Interprets **Tsunami Early Warning Services (TEWS)** bulletins and storm surge models. Coordinates orderly evacuations to high ground, refutes lethal shoreline rumors, and recognizes sudden water drawdown. |
+| 🪸 | **Marine Conservation Ranger** | Protects Marine Protected Areas (MPAs) and coral reefs. Utilizes **Coral Bleaching Early Warning System (CBEWS)** Degree Heating Weeks (DHW), satellite Sea Surface Temperature (SST) anomalies, ghost net trajectories, and oil spill containment models. |
 
 ---
 
-## 🏗️ Desktop Architecture
+## 🕹️ Core User Journey & Gameplay Loop
+
+1. **Mission Dashboard:** Review current Player Callsign, Level, XP track, score, and operational role.
+2. **Role Selection:** Switch between the 5 roles to view custom role briefings and available scenarios.
+3. **Mission Briefing:** Inspect the location (e.g., Ratnagiri, Gulf of Mannar, Kovalam, Sundarbans, Veraval, Rushikulya), operational objective, and situation context.
+4. **Simulated Ocean Telemetry:** Review real-time simulated parameters (significant wave height, swell period, chlorophyll-a, currents, sea surface temperature, and official advisory status).
+5. **Interactive Decision-Making:** Evaluate 2 to 4 distinct operational courses of action.
+6. **Scientific Evaluation & Feedback:**
+   - **Correct Decision:** Awards +100 mission score and +100 XP, increases consecutive streak.
+   - **Partially Acceptable Decision:** Awards smaller configured reward (+40 pts, +40 XP).
+   - **Suboptimal Decision:** Deducts points (-20 penalty) with 0 XP.
+   - **Severe Hazard / Unsafe Decision:** Deducts larger hazard penalty (-60 to -80 pts), records safety incident, and explains why human life or ecological integrity was compromised.
+   - **Score Floor:** Mission score is clamped so it never drops below 0.
+7. **Anti-Exploit Replay Practice:** Players can replay any completed mission for practice. The engine prevents replaying the same mission repeatedly from inflating XP or daily leaderboard scores.
+8. **Achievements & Leaderboard:** Earn milestone badges and inspect Daily and Weekly local leaderboards.
+
+---
+
+## 🏆 Progression, Levels & Achievements
+
+### Level Progression
+The level engine utilizes a deterministic formula: **every 500 XP unlocks the next rank**.
+
+- **Level 1 (0–499 XP):** Ocean Cadet 🌱
+- **Level 2 (500–999 XP):** Coastal Navigator 🧭
+- **Level 3 (1,000–1,499 XP):** Marine Specialist 🔬
+- **Level 4 (1,500–1,999 XP):** Ocean Scholar 🎓
+- **Level 5 (2,000–2,499 XP):** Master Ocean Steward 🪸
+- **Level 6+ (2,500+ XP):** Ocean Fleet Commander ⚓
+
+### Key Achievements
+- **🌊 First Tide:** Successfully complete your first simulated mission.
+- **⭐ Ocean Sentinel:** Achieve 5 consecutive correct decisions without an error.
+- **🧭 Master Navigator:** Complete missions across all 5 distinct ocean roles.
+- **🎓 Ocean Scholar:** Advance through scientific study and operational mastery to Level 4 (1,500 XP).
+- **⚡ Storm Survivor:** Successfully resolve an Advanced difficulty hazard scenario on the first attempt.
+- **🛡️ Guardian of the Deep:** Complete 10 missions without incurring a single hazard penalty.
+
+---
+
+## 📊 Local Leaderboard & Offline Persistence
+
+- **Offline-First:** All scenario datasets, game logic, and progress tracking run entirely locally without requiring internet connectivity or remote servers.
+- **Dual Persistence Bridge:**
+  - In **Electron Desktop**: Saves asynchronously via the secure context-isolated IPC bridge (`ocean:save-data`).
+  - In **Web / Mobile Browsers**: Automatically falls back to `localStorage`.
+  - **Non-Destructive Merging:** Seamlessly preserves existing application bookmarks, pledges, notes, and quiz records across schema versioning (`schemaVersion: 1`).
+- **Local Daily & Weekly Leaderboards:** Aggregates completed local sessions by calendar date and calendar week, merged with clearly designated fictional demo competitors (`[Demo]`) to create an engaging experience on first launch.
+
+---
+
+## 🌊 Exploration & Learning Modules (Retained)
+
+In addition to the gamified missions, all original UNESCO Ocean Literacy learning modules remain accessible in the app:
+- **🌊 7 Ocean Principles:** Complete UNESCO IOC framework with concepts, metrics, and case studies.
+- **⚓ Depth Zones Simulator:** Interactive vertical water column submersible dive (0m to 11,000m).
+- **🐋 Marine Life Encyclopedia:** Specimen dossiers across all marine phyla with IUCN Red List data.
+- **🌀 Climate & Ocean Currents:** Ocean acidification simulator (pH vs atmospheric CO₂) and thermohaline circulation.
+- **🛡️ Conservation Tracker:** 30x30 targets, plastic pollution metrics, and personalized stewardship pledges.
+- **🎓 Steward Assessment:** 10-question evaluation with verifiable certificate generation.
+
+---
+
+## 🏗️ Architecture & File Structure
 
 ```
 Ocean-Literacy/
-├── assets/                     # Desktop branding & media
-│   └── icons/                  # 512x512 app icon, 32x32 tray icon, SVG vector master
-├── build/                      # Electron packaging configurations
-│   ├── entitlements.mac.plist  # macOS hardened runtime entitlements
-│   └── installer.nsh           # Windows custom NSIS installer script
-├── scripts/                    # Automated build & installation scripts
-│   ├── install.sh              # Unix/macOS one-click setup script
-│   ├── install.bat             # Windows setup script
-│   ├── generate-icons.js       # Zero-dependency PNG generator
-│   ├── build-desktop.js        # Cross-platform compilation tool
-│   └── verify-setup.js         # Integrity checker
 ├── src/
 │   ├── main/
-│   │   └── main.js             # Electron main process, lifecycle, window, tray, native menu
+│   │   └── main.js                  # Electron main process, window lifecycle, native menus, IPC
 │   ├── preload/
-│   │   └── preload.js          # Secure contextBridge IPC bridge
-│   └── renderer/               # Renderer UI (Vanilla CSS + JS modules)
-│       ├── index.html          # Semantic desktop shell
-│       ├── styles/             # Curated bioluminescent dark mode design system
-│       └── js/                 # Modular controllers, datasets, and Web Audio synthesizer
+│   │   └── preload.js               # Secure contextBridge exposing oceanAPI
+│   └── renderer/
+│       ├── index.html               # Responsive app shell with mobile-friendly navigation
+│       ├── styles/
+│       │   ├── variables.css        # Bioluminescent color tokens and glassmorphism definitions
+│       │   └── app.css              # Dark oceanic styling, telemetry cards, and media queries
+│       └── js/
+│           ├── app.js               # App orchestrator, view routing, quick search
+│           ├── data/
+│           │   ├── gameScenarios.js # 15 simulated scenarios across 5 roles (UMD format)
+│           │   ├── principles.js    # UNESCO 7 Principles dataset
+│           │   ├── depthZones.js    # 5 bathymetric layers
+│           │   └── marineLife.js    # Marine species records
+│           └── modules/
+│               ├── gameLogic.js     # Pure deterministic scoring, levels, and leaderboard logic
+│               ├── gameStorage.js   # Resilient persistence adapter (Electron + localStorage)
+│               ├── gameModule.js    # Missions UI, role selection, briefings, and telemetry
+│               ├── principlesModule.js
+│               ├── depthModule.js
+│               ├── marineModule.js
+│               ├── climateModule.js
+│               ├── conservationModule.js
+│               ├── quizModule.js
+│               └── soundscape.js    # Synthesized ambient oceanic audio
 ├── test/
-│   └── app.test.js             # Automated unit & schema verification test suite
-└── .github/workflows/          # Multi-platform CI/CD release pipelines
+│   └── app.test.js                  # 18 automated unit and integration tests (zero extra deps)
+├── scripts/
+│   ├── verify-setup.js              # Environment and project integrity validator
+│   └── build-desktop.js             # Compilation helper
+└── package.json
 ```
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Installation & Running
 
 ### Prerequisites
 - [Node.js](https://nodejs.org) (v18.0.0 or higher)
 - npm (v9.0.0 or higher)
 
-### 1. Clone & Setup
-```bash
-git clone git@github.com:sahilshingate01/Ocean-Literacy.git
-cd Ocean-Literacy
-```
-
-### 2. Automated Install & Sanity Check
-On macOS or Linux:
-```bash
-./scripts/install.sh
-```
-On Windows:
-```cmd
-scripts\install.bat
-```
-
-### 3. Launch in Development Mode
+### 1. Install Dependencies
 ```bash
 npm install
-npm start
 ```
 
----
+### 2. Run Desktop Application (Electron)
+```bash
+npm start
+```
+Or in development mode with developer tools detached:
+```bash
+npm run dev
+```
 
-## 📦 Building Standalone Desktop Installers
-
-To package native desktop installers for your operating system:
-
-| Platform | Target Artifacts | Command |
-| :--- | :--- | :--- |
-| **macOS** | `.dmg` installer & `.zip` bundle (Apple Silicon + Intel) | `npm run dist:mac` |
-| **Windows** | `.exe` NSIS installer & portable executable | `npm run dist:win` |
-| **Linux** | `.AppImage` & `.deb` package | `npm run dist:linux` |
-| **Directory** | Unpacked application bundle for local testing | `npm run pack` |
-
-All compiled distribution binaries are written to the `dist/` directory.
-
----
-
-## ⌨️ Desktop Shortcuts
-
-- <kbd>⌘</kbd> + <kbd>1</kbd> — Open 7 Ocean Principles
-- <kbd>⌘</kbd> + <kbd>2</kbd> — Open Depth Zones Simulator
-- <kbd>⌘</kbd> + <kbd>3</kbd> — Open Marine Encyclopedia
-- <kbd>⌘</kbd> + <kbd>4</kbd> — Open Climate & Currents
-- <kbd>⌘</kbd> + <kbd>5</kbd> — Open Conservation Tracker
-- <kbd>⌘</kbd> + <kbd>6</kbd> — Open Knowledge Assessment & Cert
-- <kbd>⌘</kbd> + <kbd>K</kbd> — Global Quick Search
-- <kbd>Esc</kbd> — Close modals and drawers
-
-*(Replace <kbd>⌘</kbd> with <kbd>Ctrl</kbd> on Windows and Linux)*
+### 3. Run in Standard Browser
+The renderer is designed with web compatibility. You can launch a static local server in `src/renderer`:
+```bash
+npx serve src/renderer
+```
+Then open `http://localhost:3000` in Google Chrome, Safari, Firefox, or Android Chrome.
 
 ---
 
-## 🧪 Testing
+## 🧪 Automated Testing
 
-Run the automated verification suite to validate data schemas, assets, and desktop interfaces:
+Execute the built-in Node.js test suite:
 ```bash
 npm test
 ```
+Run the full environment verification:
+```bash
+npm run verify
+```
+
+The test suite validates:
+- Core Electron entry points, package configuration, and assets.
+- UNESCO principles, depth zones, and marine life datasets.
+- All 5 playable roles and complete metadata.
+- 15 unique scenario datasets with mandatory simulation notices.
+- Decision options, logic, and scientific takeaway completeness.
+- Correct decision score and XP allocation.
+- Incorrect and unsafe hazard penalty calculations.
+- Score floor non-negativity constraint.
+- XP and level boundary math (0, 499, 500, 999, 1000, 1500 XP).
+- Anti-exploit protection against repeated replay XP inflation.
+- Local daily and weekly leaderboard date grouping.
+- Milestone achievement unlocks.
+- Storage schema validation and corrupted data auto-repair.
 
 ---
 
-## 📜 License
+## 🔭 Project Boundaries & Phase 2 Roadmap
 
-This project is licensed under the [MIT License](LICENSE).
-Created with commitment to marine education by [Sahil Shingate](https://github.com/sahilshingate01).
+### Current Scope (Phase 1 MVP)
+- Single-player, offline-first execution.
+- High-fidelity simulated INCOIS ocean services.
+- Local daily and weekly leaderboard views.
+- Secure local persistence (Electron user data + browser localStorage).
+
+### Planned Roadmap (Phase 2)
+- Cloud backend API and database infrastructure.
+- User account authentication and profile synchronization.
+- Genuine multi-player global daily and weekly leaderboards.
+- Live INCOIS API integrations where authorized and available.
+- Server-side score validation and anti-cheat telemetry.
+- Institute content administration portal for creating custom training scenarios.
+- Hosted web application and installable Progressive Web App (PWA).
+- Multi-language localization, including support for Indian coastal regional languages (Hindi, Marathi, Gujarati, Tamil, Telugu, Malayalam, Bengali, Odia, and Kannada).
+
+---
+
+## 📜 License & Credits
+
+- Licensed under the [MIT License](LICENSE).
+- Aligned with the scientific frameworks of **UNESCO IOC**, **MoES**, and **INCOIS**.
+- Maintained by [Sahil Shingate](https://github.com/sahilshingate01).
