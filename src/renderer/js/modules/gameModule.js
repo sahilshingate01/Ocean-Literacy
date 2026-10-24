@@ -1,23 +1,80 @@
 /**
- * Ocean Literacy - Gamified Missions UI Module (Phase 1)
+ * Ocean Literacy - Gamified Missions UI Module (Phase 2 Full-Stack Integration)
  *
- * Coordinates the primary gameplay dashboard, role selection, mission briefings,
- * simulated oceanographic data cards, interactive decision evaluation,
- * local daily/weekly leaderboards, achievements, and player progress.
+ * Coordinates:
+ * - Server-Authoritative Online Gameplay (PostgreSQL + Express)
+ * - Offline / Practice Mode Fallback (Local Simulation)
+ * - Live INCOIS Ocean State Telemetry Cards with Official Attribution
+ * - Database-backed Global Leaderboards (Daily, Weekly, Overall in Asia/Kolkata)
+ * - Anti-Exploit Replay & Duplicate Prevention Badges
+ * - Player Progression & Milestone Achievements
  */
 
 const GameModule = {
   state: null,
   activeSubView: 'dashboard', // 'dashboard' | 'mission-play' | 'mission-result' | 'leaderboard' | 'achievements'
   activeMissionId: null,
+  activeAttemptId: null,
   selectedOptionId: null,
   lastEvaluation: null,
-  leaderboardPeriod: 'daily', // 'daily' | 'weekly'
+  leaderboardPeriod: 'daily', // 'daily' | 'weekly' | 'overall'
+  leaderboardData: null,
+  incoisFeed: null,
+  serverMissions: null,
 
   async init() {
     this.state = await GameStorage.loadGameState();
     this.checkInitialAchievements();
+
+    // Check server status & sync online progress if available
+    await this.refreshOnlineState();
     this.render();
+  },
+
+  async refreshOnlineState() {
+    if (typeof ApiClient === 'undefined') return;
+
+    try {
+      const isOnline = await ApiClient.checkServerHealth();
+      if (isOnline) {
+        // Fetch published missions from server
+        try {
+          this.serverMissions = await ApiClient.getPublishedMissions();
+        } catch (e) {
+          console.warn('Could not fetch server missions:', e);
+        }
+
+        // Fetch INCOIS ocean state forecast for live feed widget
+        try {
+          const osf = await ApiClient.getIncoisOsf();
+          this.incoisFeed = osf;
+        } catch (e) {
+          console.warn('Could not fetch INCOIS feed:', e);
+        }
+
+        // If authenticated user, sync remote progress
+        const user = ApiClient.getCurrentUser();
+        if (user) {
+          try {
+            const prog = await ApiClient.getUserProgress();
+            if (prog && prog.profile) {
+              this.state.score = prog.profile.totalScore;
+              this.state.xp = prog.profile.totalXp;
+              this.state.streak = prog.profile.currentStreak;
+              this.state.maxStreak = prog.profile.maxStreak;
+              this.state.hazardIncidents = prog.profile.hazardIncidents;
+              this.state.completedMissions = prog.completedMissionIds || [];
+              this.state.player.callsign = prog.profile.callsign || this.state.player.callsign;
+              this.state.activeRoleId = prog.profile.activeRoleId || this.state.activeRoleId;
+            }
+          } catch (e) {
+            console.warn('Could not sync user progress:', e);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Error refreshing online state:', err);
+    }
   },
 
   checkInitialAchievements() {
@@ -55,30 +112,112 @@ const GameModule = {
   setActiveRole(roleId) {
     this.state.activeRoleId = roleId;
     GameStorage.saveGameState(this.state);
+    if (typeof ApiClient !== 'undefined' && ApiClient.getCurrentUser()) {
+      ApiClient.updateSettings({ activeRoleId: roleId }).catch(() => {});
+    }
     this.activeSubView = 'dashboard';
     this.render();
   },
 
   switchSubView(viewName) {
     this.activeSubView = viewName;
+    if (viewName === 'leaderboard') {
+      this.loadLeaderboardData();
+    }
     this.render();
   },
 
-  launchMission(scenarioId) {
+  async loadLeaderboardData() {
+    if (typeof ApiClient !== 'undefined' && ApiClient.isOnline()) {
+      try {
+        let res;
+        if (this.leaderboardPeriod === 'weekly') {
+          res = await ApiClient.getWeeklyLeaderboard();
+        } else if (this.leaderboardPeriod === 'overall') {
+          res = await ApiClient.getOverallLeaderboard();
+        } else {
+          res = await ApiClient.getDailyLeaderboard();
+        }
+        this.leaderboardData = res;
+        this.render();
+      } catch (err) {
+        console.warn('Failed to load global leaderboards:', err);
+        this.leaderboardData = null;
+      }
+    }
+  },
+
+  async launchMission(scenarioId) {
     this.activeMissionId = scenarioId;
     this.selectedOptionId = null;
     this.lastEvaluation = null;
+    this.activeAttemptId = null;
+
+    // If online and authenticated, start an authoritative server attempt!
+    if (typeof ApiClient !== 'undefined' && ApiClient.isOnline() && ApiClient.getCurrentUser()) {
+      try {
+        const attemptRes = await ApiClient.startAttempt(scenarioId);
+        this.activeAttemptId = attemptRes.attemptId;
+      } catch (err) {
+        console.warn('Could not start server attempt, falling back to local practice:', err);
+      }
+    }
+
     this.activeSubView = 'mission-play';
     this.render();
 
-    // Scroll container to top
     const container = document.getElementById('view-missions');
     if (container) container.scrollTop = 0;
   },
 
-  submitDecision() {
+  async submitDecision() {
     if (!this.selectedOptionId || !this.activeMissionId) return;
 
+    const isOnlineAuth = typeof ApiClient !== 'undefined' &&
+      ApiClient.isOnline() &&
+      ApiClient.getCurrentUser() &&
+      this.activeAttemptId;
+
+    if (isOnlineAuth) {
+      try {
+        const res = await ApiClient.submitDecision(this.activeAttemptId, this.selectedOptionId);
+        const evalData = res.evaluation;
+
+        this.lastEvaluation = {
+          isCorrect: evalData.isCorrect,
+          isHazardous: evalData.isHazardous,
+          pointsDelta: evalData.pointsDelta,
+          earnedXp: evalData.earnedXp,
+          feedback: evalData.feedback,
+          scienceTakeaway: evalData.scienceTakeaway,
+          isReplay: res.isReplay,
+          isServerConfirmed: true,
+          timestamp: new Date().toISOString()
+        };
+
+        if (res.profile) {
+          this.state.score = res.profile.totalScore;
+          this.state.xp = res.profile.totalXp;
+          this.state.streak = res.profile.currentStreak;
+          this.state.maxStreak = res.profile.maxStreak;
+          this.state.hazardIncidents = res.profile.hazardIncidents;
+        }
+
+        if (!this.state.completedMissions.includes(this.activeMissionId)) {
+          this.state.completedMissions.push(this.activeMissionId);
+        }
+
+        this.activeSubView = 'mission-result';
+        this.render();
+        const container = document.getElementById('view-missions');
+        if (container) container.scrollTop = 0;
+        return;
+      } catch (err) {
+        console.warn('Server decision submission failed, falling back to local evaluation:', err);
+      }
+    }
+
+    // Local / Offline Evaluation Fallback
     const data = window.OCEAN_GAME_DATA || {};
     const scenario = (data.SCENARIOS || []).find(s => s.id === this.activeMissionId);
     if (!scenario) return;
@@ -91,7 +230,6 @@ const GameModule = {
       completedMissions: this.state.completedMissions
     });
 
-    // Update state
     this.state.score = evaluation.newScore;
     this.state.xp = evaluation.newXp;
     this.state.streak = evaluation.newStreak;
@@ -114,7 +252,7 @@ const GameModule = {
       optionType: evaluation.optionType,
       isCorrect: evaluation.isCorrect,
       isHazardous: evaluation.isHazardous,
-      isHazardousScenario: scenario.difficulty === 'Advanced' && (scenario.serviceLabel.includes('Alert') || scenario.serviceLabel.includes('Warning')),
+      isHazardousScenario: scenario.difficulty === 'Advanced',
       difficulty: scenario.difficulty,
       pointsDelta: evaluation.pointsDelta,
       earnedXp: evaluation.earnedXp,
@@ -122,12 +260,10 @@ const GameModule = {
       timestamp: evaluation.timestamp
     });
 
-    // Cap history length to last 60 records
     if (this.state.history.length > 60) {
       this.state.history = this.state.history.slice(0, 60);
     }
 
-    // Check newly unlocked achievements
     const newlyUnlocked = GameLogic.checkAchievements(
       {
         totalCompleted: this.state.completedMissions.length,
@@ -147,7 +283,10 @@ const GameModule = {
 
     GameStorage.saveGameState(this.state);
 
-    this.lastEvaluation = evaluation;
+    this.lastEvaluation = {
+      ...evaluation,
+      isServerConfirmed: false
+    };
     this.activeSubView = 'mission-result';
     this.render();
 
@@ -156,6 +295,13 @@ const GameModule = {
   },
 
   editCallsign() {
+    if (typeof AuthModal !== 'undefined') {
+      const user = typeof ApiClient !== 'undefined' ? ApiClient.getCurrentUser() : null;
+      if (user) {
+        AuthModal.openProfile();
+        return;
+      }
+    }
     const current = this.state.player?.callsign || 'Ocean Explorer';
     const input = prompt('Enter your local Maritime Call Sign / Display Name (Max 24 characters):', current);
     if (input !== null) {
@@ -192,6 +338,8 @@ const GameModule = {
 
     const data = window.OCEAN_GAME_DATA || { ROLES: [], SCENARIOS: [] };
     const progress = GameLogic.calculateProgress(this.state.xp);
+    const isOnline = typeof ApiClient !== 'undefined' && ApiClient.isOnline();
+    const currentUser = typeof ApiClient !== 'undefined' ? ApiClient.getCurrentUser() : null;
 
     container.innerHTML = `
       <div class="game-module-container">
@@ -204,6 +352,9 @@ const GameModule = {
                 <div class="player-callsign-row">
                   <span class="player-callsign" id="playerCallsignLabel">${this.escapeHtml(this.state.player.callsign)}</span>
                   <button class="btn-subtle-edit" id="btnEditCallsign" title="Change Display Name">✎</button>
+                  <span class="mode-badge ${isOnline && currentUser ? 'online' : 'offline'}">
+                    ${isOnline && currentUser ? '🟢 Server Online' : '🟡 Practice Mode'}
+                  </span>
                 </div>
                 <div class="player-rank">${progress.rankTitle} • Level ${progress.level}</div>
               </div>
@@ -252,7 +403,7 @@ const GameModule = {
               🎮 Mission Operations
             </button>
             <button class="game-tab-btn ${this.activeSubView === 'leaderboard' ? 'active' : ''}" id="tabLeaderboard">
-              🏆 Local Leaderboard
+              🏆 Global Leaderboard
             </button>
             <button class="game-tab-btn ${this.activeSubView === 'achievements' ? 'active' : ''}" id="tabAchievements">
               🎖️ Achievements (${this.state.unlockedAchievements.length} / 6)
@@ -289,11 +440,15 @@ const GameModule = {
   renderDashboardView(data) {
     const activeRole = (data.ROLES || []).find(r => r.id === this.state.activeRoleId) || (data.ROLES || [])[0];
     const roleMissions = (data.SCENARIOS || []).filter(s => s.roleId === this.state.activeRoleId);
-
-    // Find next uncompleted mission for quick start
     const nextMission = roleMissions.find(m => !this.state.completedMissions.includes(m.id)) || roleMissions[0];
 
+    const isOnline = typeof ApiClient !== 'undefined' && ApiClient.isOnline();
+    const currentUser = typeof ApiClient !== 'undefined' ? ApiClient.getCurrentUser() : null;
+
     return `
+      <!-- INCOIS Operational Ocean State Live Feed Widget -->
+      ${this.renderIncoisLiveWidget()}
+
       <!-- Role Selection Carousel / Ribbon -->
       <section class="roles-selection-section">
         <div class="section-heading-row">
@@ -351,31 +506,30 @@ const GameModule = {
 
         <!-- Scenarios Grid -->
         <div class="scenarios-grid-header">
-          <h3 class="scenarios-heading">Available Operational Scenarios (${roleMissions.length})</h3>
-          <span class="simulation-tag-pill">Simulated Ocean Telemetry</span>
+          <h3 class="board-title">Operational Decision Missions (${roleMissions.length})</h3>
+          <span class="board-subtitle">Decisions are evaluated against trusted oceanographic science rules</span>
         </div>
 
         <div class="scenarios-grid">
-          ${roleMissions.map((scen, idx) => {
-            const isCompleted = this.state.completedMissions.includes(scen.id);
-            const diffClass = scen.difficulty.toLowerCase();
+          ${roleMissions.map((s, idx) => {
+            const isCompleted = this.state.completedMissions.includes(s.id);
+            const diffClass = s.difficulty.toLowerCase();
 
             return `
-              <div class="scenario-card ${isCompleted ? 'completed' : ''}" data-scenario-id="${scen.id}">
+              <div class="scenario-card ${isCompleted ? 'completed' : ''}" data-scenario-id="${s.id}">
                 <div class="scenario-card-top">
-                  <span class="difficulty-badge ${diffClass}">${scen.difficulty}</span>
-                  <span class="scenario-status-badge ${isCompleted ? 'done' : 'new'}">
-                    ${isCompleted ? '✓ Completed' : 'Mission 0' + (idx + 1)}
-                  </span>
+                  <span class="scenario-number">Mission #${idx + 1}</span>
+                  <span class="difficulty-badge ${diffClass}">${s.difficulty}</span>
                 </div>
-                <h4 class="scenario-card-title">${this.escapeHtml(scen.title)}</h4>
-                <div class="scenario-region-tag">📍 ${this.escapeHtml(scen.region)}</div>
-                <div class="scenario-service-tag">📡 ${this.escapeHtml(scen.serviceLabel)}</div>
-                <p class="scenario-objective-snippet">${this.escapeHtml(scen.objective)}</p>
-                <div class="scenario-card-bottom">
-                  <span class="reward-hint">+100 pts • +100 XP</span>
-                  <button class="btn-launch-mission ${isCompleted ? 'secondary' : 'primary'}" data-scenario-id="${scen.id}">
-                    ${isCompleted ? 'Replay for Practice' : 'Launch Briefing ➔'}
+                <h4 class="scenario-title">${this.escapeHtml(s.title)}</h4>
+                <div class="scenario-region">📍 ${this.escapeHtml(s.region)}</div>
+                <p class="scenario-objective">${this.escapeHtml(s.objective)}</p>
+                <div class="scenario-card-footer">
+                  <span class="completion-status ${isCompleted ? 'done' : 'pending'}">
+                    ${isCompleted ? 'Completed ✓' : 'Available'}
+                  </span>
+                  <button class="btn-launch-mission" data-scenario-id="${s.id}">
+                    ${isCompleted ? 'Replay Mission' : 'Start Mission ➔'}
                   </button>
                 </div>
               </div>
@@ -386,18 +540,65 @@ const GameModule = {
     `;
   },
 
+  renderIncoisLiveWidget() {
+    const feed = this.incoisFeed?.data?.forecastParameters;
+    const provenance = this.incoisFeed?.provenance;
+
+    return `
+      <section class="incois-live-widget">
+        <div class="incois-widget-header">
+          <div class="incois-brand-group">
+            <span class="incois-pulse-dot"></span>
+            <div>
+              <span class="incois-tag">INCOIS INFORMATION SERVICE</span>
+              <h3 class="incois-widget-title">Simulated Coastal Ocean State &amp; Hazard Advisory</h3>
+            </div>
+          </div>
+          <div class="incois-meta-links">
+            <span class="incois-freshness-pill simulated">Simulated Educational Model</span>
+            <a href="https://www.incois.gov.in" target="_blank" rel="noopener noreferrer" class="incois-ext-link">
+              Official INCOIS Portal ↗
+            </a>
+          </div>
+        </div>
+
+        <div class="incois-telemetry-row">
+          <div class="incois-pill-item">
+            <span class="pill-title">Significant Wave Height</span>
+            <span class="pill-value">${feed ? feed.significantWaveHeightMeters?.range || '2.1 m' : '1.8 - 2.5 m (Moderate)'}</span>
+            <span class="pill-sub">West Coast Sector</span>
+          </div>
+          <div class="incois-pill-item">
+            <span class="pill-title">Swell Period &amp; Dir</span>
+            <span class="pill-value">${feed ? `${feed.swellWaveHeightMeters?.periodSeconds || 12.4}s (SSW)` : '12.4s (South-Southwest)'}</span>
+            <span class="pill-sub">Kallakkadal Watch</span>
+          </div>
+          <div class="incois-pill-item">
+            <span class="pill-title">Wind &amp; Gust Speed</span>
+            <span class="pill-value">${feed ? `${feed.surfaceWindSpeedKmh?.value || 24} km/h (Gusts ${feed.surfaceWindSpeedKmh?.gustsKmh || 36})` : '24 km/h (Westerly)'}</span>
+            <span class="pill-sub">Small Craft Caution</span>
+          </div>
+          <div class="incois-pill-item">
+            <span class="pill-title">Tsunami Warning Level</span>
+            <span class="pill-value text-emerald">NO THREAT / NORMAL</span>
+            <span class="pill-sub">ITEWS Indian Ocean</span>
+          </div>
+        </div>
+
+        <div class="incois-disclaimer-strip">
+          ⚠️ <strong>EDUCATIONAL SIMULATION NOTICE:</strong> Ocean State telemetry is modeled for instructional gameplay and classroom awareness. For real-world maritime safety, vessels must strictly consult live <a href="https://www.incois.gov.in" target="_blank" class="incois-link-inline">INCOIS bulletins</a> and port authority VHF advisories.
+        </div>
+      </section>
+    `;
+  },
+
   renderMissionPlayView(data) {
     const scenario = (data.SCENARIOS || []).find(s => s.id === this.activeMissionId);
-    if (!scenario) {
-      return `
-        <div class="error-panel">
-          <p>Scenario not found. Return to dashboard.</p>
-          <button class="btn-return-dashboard" id="btnReturnDashboard">Return</button>
-        </div>
-      `;
-    }
+    if (!scenario) return `<p>Scenario not found.</p>`;
 
     const isReplay = this.state.completedMissions.includes(scenario.id);
+    const isOnline = typeof ApiClient !== 'undefined' && ApiClient.isOnline();
+    const currentUser = typeof ApiClient !== 'undefined' ? ApiClient.getCurrentUser() : null;
 
     return `
       <div class="mission-play-container">
@@ -421,7 +622,13 @@ const GameModule = {
 
         ${isReplay ? `
           <div class="practice-mode-banner">
-            ℹ️ <strong>Practice Run:</strong> You have previously completed this mission. You can practice decisions freely; repeated plays will not artificially inflate your leaderboard score.
+            ℹ️ <strong>Practice Run:</strong> You have previously completed this mission. Replaying allows decision practice without inflating competitive global rankings.
+          </div>
+        ` : ''}
+
+        ${!isOnline || !currentUser ? `
+          <div class="practice-mode-banner offline">
+            🟡 <strong>Offline Practice Mode:</strong> Decisions are evaluated locally. Sign in to record authoritative attempts on the global leaderboard.
           </div>
         ` : ''}
 
@@ -429,7 +636,7 @@ const GameModule = {
         <div class="mission-hero-card">
           <div class="hero-header-row">
             <div>
-              <span class="hero-service-badge">📡 ${this.escapeHtml(scenario.serviceLabel)}</span>
+              <span class="hero-service-badge">📡 ${this.escapeHtml(scenario.serviceLabel || 'INCOIS Advisory')}</span>
               <h1 class="mission-hero-title">${this.escapeHtml(scenario.title)}</h1>
               <div class="mission-location-meta">📍 ${this.escapeHtml(scenario.region)}</div>
             </div>
@@ -505,58 +712,46 @@ const GameModule = {
   },
 
   renderMissionResultView(data) {
+    const scenario = (data.SCENARIOS || []).find(s => s.id === this.activeMissionId);
     const evaluation = this.lastEvaluation;
-    if (!evaluation) {
-      return this.renderDashboardView(data);
-    }
+    if (!scenario || !evaluation) return `<p>No evaluation available.</p>`;
 
-    const scenario = (data.SCENARIOS || []).find(s => s.id === evaluation.scenarioId);
-    let outcomeClass = 'incorrect';
-    let outcomeHeading = 'Operational Choice Evaluated';
-    let outcomeIcon = '❌';
-
-    if (evaluation.isCorrect) {
-      outcomeClass = 'correct';
-      outcomeHeading = 'Optimal Decision! Mission Accomplished';
-      outcomeIcon = '✅';
-    } else if (evaluation.isPartial) {
-      outcomeClass = 'partial';
-      outcomeHeading = 'Partially Acceptable Course of Action';
-      outcomeIcon = '⚠️';
-    } else if (evaluation.isHazardous) {
-      outcomeClass = 'hazardous';
-      outcomeHeading = 'Severe Coastal & Maritime Hazard Triggered';
-      outcomeIcon = '🚨';
-    }
-
-    const nextMission = (data.SCENARIOS || []).find(s => s.roleId === this.state.activeRoleId && !this.state.completedMissions.includes(s.id));
+    const roleMissions = (data.SCENARIOS || []).filter(s => s.roleId === this.state.activeRoleId);
+    const nextMission = roleMissions.find(m => !this.state.completedMissions.includes(m.id));
 
     return `
       <div class="mission-result-container">
-        <!-- Prominent Outcome Banner -->
-        <div class="result-banner ${outcomeClass}">
-          <div class="result-icon">${outcomeIcon}</div>
-          <div class="result-summary">
-            <h2 class="result-heading">${outcomeHeading}</h2>
-            <div class="result-metrics-row">
-              <span class="score-delta ${evaluation.pointsDelta >= 0 ? 'pos' : 'neg'}">
-                ${evaluation.pointsDelta >= 0 ? '+' + evaluation.pointsDelta : evaluation.pointsDelta} Score
-              </span>
-              <span class="xp-delta ${evaluation.earnedXp > 0 ? 'pos' : 'zero'}">
-                +${evaluation.earnedXp} XP
-              </span>
-              ${evaluation.isReplay ? `
-                <span class="replay-tag">Practice Run (No Duplicate XP)</span>
-              ` : ''}
-              ${evaluation.isCorrect ? `
-                <span class="streak-tag">🔥 Streak: ${this.state.streak}</span>
-              ` : ''}
-            </div>
+        <!-- Outcome Banner -->
+        <div class="result-banner ${evaluation.isCorrect ? 'correct' : (evaluation.isHazardous ? 'hazardous' : 'incorrect')}">
+          <div class="result-banner-icon">
+            ${evaluation.isCorrect ? '✅' : (evaluation.isHazardous ? '⚠️' : '❌')}
+          </div>
+          <div class="result-banner-text">
+            <h2 class="result-title">
+              ${evaluation.isCorrect ? 'Sound Maritime Decision!' : (evaluation.isHazardous ? 'Hazardous Choice / Critical Penalty!' : 'Suboptimal Operational Choice')}
+            </h2>
+            <p class="result-subtitle">
+              ${evaluation.isCorrect ? 'Your decision adhered to oceanic safety limits and scientific recommendations.' : 'Your choice risked vessel safety, gear integrity, or coastal community welfare.'}
+            </p>
+          </div>
+          <div class="result-score-tag ${evaluation.pointsDelta >= 0 ? 'positive' : 'negative'}">
+            <span class="score-delta">${evaluation.pointsDelta >= 0 ? `+${evaluation.pointsDelta}` : evaluation.pointsDelta} pts</span>
+            <span class="xp-delta">${evaluation.earnedXp > 0 ? `+${evaluation.earnedXp} XP` : '0 XP'}</span>
           </div>
         </div>
 
-        <!-- Detailed Feedback & Explanation Card -->
-        <div class="result-detail-card">
+        ${evaluation.isServerConfirmed ? `
+          <div class="server-confirmed-pill">
+            🔒 <strong>Server-Authoritative Result:</strong> Transaction confirmed and written to PostgreSQL authoritative ledger.
+          </div>
+        ` : `
+          <div class="practice-mode-banner offline">
+            🟡 <strong>Practice Result:</strong> Evaluated locally in offline practice mode.
+          </div>
+        `}
+
+        <!-- Detailed Feedback & Educational Science Takeaways -->
+        <div class="result-details-card">
           <div class="detail-section">
             <h4 class="detail-subtitle">Operational Analysis</h4>
             <p class="detail-body">${this.escapeHtml(evaluation.feedback)}</p>
@@ -566,15 +761,6 @@ const GameModule = {
             <h4 class="detail-subtitle">Scientific & Safety Takeaway (INCOIS Framework)</h4>
             <p class="detail-body">${this.escapeHtml(evaluation.scienceTakeaway)}</p>
           </div>
-
-          ${evaluation.sourceUrl ? `
-            <div class="detail-section reference">
-              <span class="ref-label">Official Reference:</span>
-              <a href="${evaluation.sourceUrl}" target="_blank" rel="noopener noreferrer" class="ref-link">
-                ${this.escapeHtml(evaluation.sourceUrl)}
-              </a>
-            </div>
-          ` : ''}
         </div>
 
         <!-- Action Navigation Buttons -->
@@ -600,28 +786,52 @@ const GameModule = {
   },
 
   renderLeaderboardView(data) {
+    const isOnline = typeof ApiClient !== 'undefined' && ApiClient.isOnline();
     const period = this.leaderboardPeriod;
-    const entries = GameLogic.groupLeaderboard(this.state.history, period, new Date());
+
+    let entries = [];
+    let currentUserRank = null;
+    let methodology = null;
+
+    if (isOnline && this.leaderboardData) {
+      entries = this.leaderboardData.leaderboard || [];
+      currentUserRank = this.leaderboardData.currentUserRank;
+      methodology = this.leaderboardData.methodology;
+    } else {
+      // Local fallback
+      entries = GameLogic.groupLeaderboard(this.state.history, period, new Date());
+    }
 
     return `
       <div class="leaderboard-container">
         <div class="leaderboard-header-row">
           <div>
-            <h2 class="section-title">Local Maritime Leaderboard</h2>
+            <h2 class="section-title">Global Ocean Literacy Leaderboard</h2>
             <p class="section-subtitle">
-              Calculated from local session performance on this machine and verified demo entries.
+              ${isOnline ? 'Authoritative rankings verified by PostgreSQL server engine in Asia/Kolkata timezone (IST).' : 'Operating in offline practice mode. Sign in to view live global rankings.'}
             </p>
           </div>
 
-          <!-- Daily / Weekly Toggle -->
+          <!-- Period Toggle (Daily, Weekly, Overall) -->
           <div class="period-toggle-group">
-            <button class="period-toggle-btn ${period === 'daily' ? 'active' : ''}" id="btnPeriodDaily">Today's Local Rank</button>
-            <button class="period-toggle-btn ${period === 'weekly' ? 'active' : ''}" id="btnPeriodWeekly">This Week's Local Rank</button>
+            <button class="period-toggle-btn ${period === 'daily' ? 'active' : ''}" id="btnPeriodDaily">Daily (IST)</button>
+            <button class="period-toggle-btn ${period === 'weekly' ? 'active' : ''}" id="btnPeriodWeekly">Weekly (IST)</button>
+            <button class="period-toggle-btn ${period === 'overall' ? 'active' : ''}" id="btnPeriodOverall">Overall Global</button>
           </div>
         </div>
 
+        ${currentUserRank ? `
+          <div class="current-user-rank-card">
+            <span class="user-rank-icon">⭐</span>
+            <div class="user-rank-info">
+              <span class="rank-title">Your Current Ranking:</span>
+              <span class="rank-details">Rank #${currentUserRank.rank} • ${currentUserRank.score} pts • ${currentUserRank.xp} XP</span>
+            </div>
+          </div>
+        ` : ''}
+
         <div class="leaderboard-notice-card">
-          ℹ️ <strong>Notice:</strong> Phase 1 runs in offline-first mode. All entries represent your local session and simulated demo competitors. Scores are never sent to external servers.
+          ℹ️ <strong>Scoring Policy:</strong> Deterministic tie-breaking (Score DESC ➔ XP DESC ➔ Earliest Timestamp ASC). Only finalized server-evaluated attempts enter competitive leaderboards. Unranked replays prevent point inflation.
         </div>
 
         <div class="leaderboard-table-card">
@@ -631,28 +841,30 @@ const GameModule = {
                 <th>Rank</th>
                 <th>Navigator / Callsign</th>
                 <th>Role Station</th>
-                <th>Session Score</th>
-                <th>Source</th>
+                <th>Level</th>
+                <th>Score</th>
+                <th>XP</th>
               </tr>
             </thead>
             <tbody>
-              ${entries.map(e => `
-                <tr class="${e.isDemo ? 'demo-row' : 'player-row'}">
+              ${entries.length > 0 ? entries.map(e => `
+                <tr class="${currentUserRank && e.userId === currentUserRank.userId ? 'my-rank-row' : ''}">
                   <td class="rank-col">
                     <span class="rank-circle rank-${e.rank}">${e.rank}</span>
                   </td>
                   <td class="name-col">
-                    <strong>${this.escapeHtml(e.playerName)}</strong>
+                    <strong>${this.escapeHtml(e.callsign || e.playerName)}</strong>
                   </td>
-                  <td class="role-col">${this.escapeHtml(e.roleTitle)}</td>
+                  <td class="role-col">${this.escapeHtml(e.activeRoleId || e.roleTitle || 'Cadet')}</td>
+                  <td class="level-col">Lvl ${e.level || 1}</td>
                   <td class="score-col"><strong>${e.score} pts</strong></td>
-                  <td class="type-col">
-                    <span class="type-badge ${e.isDemo ? 'demo' : 'local'}">
-                      ${e.isDemo ? 'Fictional Demo' : 'Local Attempt'}
-                    </span>
-                  </td>
+                  <td class="xp-col text-cyan">${e.xp || 0} XP</td>
                 </tr>
-              `).join('')}
+              `).join('') : `
+                <tr>
+                  <td colspan="6" class="text-center p-4 text-secondary">No competitive score records found for this period. Complete a mission to set the first score!</td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
@@ -661,65 +873,51 @@ const GameModule = {
   },
 
   renderAchievementsView(data) {
-    const achievements = GameLogic.ACHIEVEMENTS || [];
-    const unlockedSet = new Set(this.state.unlockedAchievements || []);
+    const list = GameLogic.ACHIEVEMENTS;
 
     return `
       <div class="achievements-container">
-        <div class="section-heading-row">
-          <div>
-            <h2 class="section-title">Ocean Steward Achievements</h2>
-            <p class="section-subtitle">Earn distinctions by demonstrating operational safety, endurance streaks, and scientific mastery.</p>
-          </div>
-          <div class="achievements-count-badge">
-            ${unlockedSet.size} / ${achievements.length} Unlocked
-          </div>
+        <div class="achievements-header">
+          <h2 class="section-title">Maritime Milestone Achievements</h2>
+          <p class="section-subtitle">Earn recognition as you advance from novice Cadet to master Ocean Steward.</p>
         </div>
 
         <div class="achievements-grid">
-          ${achievements.map(ach => {
-            const isUnlocked = unlockedSet.has(ach.id);
+          ${list.map(ach => {
+            const isUnlocked = this.state.unlockedAchievements.includes(ach.id);
             const dateStr = this.state.achievementDates[ach.id];
             const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString() : '';
 
             return `
               <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
-                <div class="achievement-icon-wrapper">
-                  <span class="achievement-icon">${ach.icon}</span>
+                <div class="ach-icon-wrapper">
+                  <span class="ach-icon">${ach.icon}</span>
+                  ${isUnlocked ? '<span class="ach-unlocked-check">✓</span>' : ''}
                 </div>
-                <div class="achievement-info">
-                  <div class="achievement-title-row">
-                    <h3 class="achievement-title">${this.escapeHtml(ach.title)}</h3>
-                    <span class="status-indicator-tag">${isUnlocked ? 'Unlocked ✓' : 'Locked'}</span>
-                  </div>
-                  <p class="achievement-desc">${this.escapeHtml(ach.desc)}</p>
-                  <div class="achievement-criteria">
-                    <span>Criteria: ${this.escapeHtml(ach.criteria)}</span>
-                    ${isUnlocked && formattedDate ? `<span class="unlocked-date">Unlocked ${formattedDate}</span>` : ''}
+                <div class="ach-content">
+                  <h3 class="ach-title">${this.escapeHtml(ach.title)}</h3>
+                  <p class="ach-desc">${this.escapeHtml(ach.desc)}</p>
+                  <div class="ach-meta">
+                    <span class="ach-criteria">🎯 ${this.escapeHtml(ach.criteria)}</span>
+                    <span class="ach-status ${isUnlocked ? 'done' : 'lock'}">
+                      ${isUnlocked ? `Unlocked: ${formattedDate}` : 'Locked'}
+                    </span>
                   </div>
                 </div>
               </div>
             `;
           }).join('')}
         </div>
-
-        <div class="reset-progress-area">
-          <button class="btn-reset-danger" id="btnResetProgress">
-            ⚠️ Reset Local Mission Progress
-          </button>
-        </div>
       </div>
     `;
   },
 
   bindEvents(container) {
-    // 1. Callsign editing
+    // Callsign editing
     const btnEdit = container.querySelector('#btnEditCallsign');
-    if (btnEdit) {
-      btnEdit.addEventListener('click', () => this.editCallsign());
-    }
+    if (btnEdit) btnEdit.addEventListener('click', () => this.editCallsign());
 
-    // 2. Sub-tab navigation
+    // Sub-tab navigation
     const tabDash = container.querySelector('#tabDashboard');
     const tabLead = container.querySelector('#tabLeaderboard');
     const tabAch = container.querySelector('#tabAchievements');
@@ -728,7 +926,7 @@ const GameModule = {
     if (tabLead) tabLead.addEventListener('click', () => this.switchSubView('leaderboard'));
     if (tabAch) tabAch.addEventListener('click', () => this.switchSubView('achievements'));
 
-    // 3. Role card selection
+    // Role card selection
     container.querySelectorAll('.role-card').forEach(card => {
       card.addEventListener('click', () => {
         const roleId = card.dataset.roleId;
@@ -736,7 +934,7 @@ const GameModule = {
       });
     });
 
-    // 4. Quick continue
+    // Quick continue
     const btnQuick = container.querySelector('#btnQuickContinue');
     if (btnQuick) {
       btnQuick.addEventListener('click', () => {
@@ -745,7 +943,7 @@ const GameModule = {
       });
     }
 
-    // 5. Launch mission buttons
+    // Launch mission buttons
     container.querySelectorAll('.btn-launch-mission').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -754,23 +952,14 @@ const GameModule = {
       });
     });
 
-    // 6. Navigation back to dashboard
+    // Back to dashboard
     const btnBack = container.querySelector('#btnBackToDashboard');
-    if (btnBack) {
-      btnBack.addEventListener('click', () => this.switchSubView('dashboard'));
-    }
-
-    const btnReturn = container.querySelector('#btnReturnDashboard');
-    if (btnReturn) {
-      btnReturn.addEventListener('click', () => this.switchSubView('dashboard'));
-    }
+    if (btnBack) btnBack.addEventListener('click', () => this.switchSubView('dashboard'));
 
     const btnReturnToBoard = container.querySelector('#btnReturnToBoard');
-    if (btnReturnToBoard) {
-      btnReturnToBoard.addEventListener('click', () => this.switchSubView('dashboard'));
-    }
+    if (btnReturnToBoard) btnReturnToBoard.addEventListener('click', () => this.switchSubView('dashboard'));
 
-    // 7. Decision option card selection
+    // Decision option card selection
     container.querySelectorAll('.decision-option-card').forEach(card => {
       card.addEventListener('click', () => {
         container.querySelectorAll('.decision-option-card').forEach(c => c.classList.remove('selected'));
@@ -785,19 +974,19 @@ const GameModule = {
       });
     });
 
-    // 8. Submit decision button
+    // Submit decision
     const btnSubmit = container.querySelector('#btnSubmitDecision');
     if (btnSubmit) {
       btnSubmit.addEventListener('click', () => this.submitDecision());
     }
 
-    // 9. Replay current mission
+    // Replay current mission
     const btnReplay = container.querySelector('#btnReplayCurrent');
     if (btnReplay && this.activeMissionId) {
       btnReplay.addEventListener('click', () => this.launchMission(this.activeMissionId));
     }
 
-    // 10. Launch next mission
+    // Launch next mission
     const btnNext = container.querySelector('#btnLaunchNext');
     if (btnNext) {
       btnNext.addEventListener('click', () => {
@@ -806,32 +995,33 @@ const GameModule = {
       });
     }
 
-    // 11. View Leaderboard from Result screen
+    // View Leaderboard from Result screen
     const btnViewLead = container.querySelector('#btnViewLeaderboard');
     if (btnViewLead) {
       btnViewLead.addEventListener('click', () => this.switchSubView('leaderboard'));
     }
 
-    // 12. Leaderboard period toggle
+    // Leaderboard period toggles
     const btnDaily = container.querySelector('#btnPeriodDaily');
     const btnWeekly = container.querySelector('#btnPeriodWeekly');
+    const btnOverall = container.querySelector('#btnPeriodOverall');
     if (btnDaily) {
       btnDaily.addEventListener('click', () => {
         this.leaderboardPeriod = 'daily';
-        this.render();
+        this.loadLeaderboardData();
       });
     }
     if (btnWeekly) {
       btnWeekly.addEventListener('click', () => {
         this.leaderboardPeriod = 'weekly';
-        this.render();
+        this.loadLeaderboardData();
       });
     }
-
-    // 13. Reset progress
-    const btnReset = container.querySelector('#btnResetProgress');
-    if (btnReset) {
-      btnReset.addEventListener('click', () => this.confirmResetProgress());
+    if (btnOverall) {
+      btnOverall.addEventListener('click', () => {
+        this.leaderboardPeriod = 'overall';
+        this.loadLeaderboardData();
+      });
     }
   }
 };

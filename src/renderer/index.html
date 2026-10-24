@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:;">
-  <title>Ocean Literacy — Marine Science & Exploration Desktop</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:3000 http://127.0.0.1:3000; connect-src 'self' http://localhost:3000 http://127.0.0.1:3000 http://localhost:3001 http://localhost:3002 http://localhost:3003 http://localhost:3004 http://localhost:3005; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:;">
+  <title>Ocean Literacy — Marine Science & Exploration Platform (Phase 2)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
             <use href="#icon-ocean-crest"></use>
           </svg>
           <span class="brand-title">Ocean Literacy</span>
-          <span class="brand-tag">UNESCO Marine Studio</span>
+          <span class="brand-tag">UNESCO Marine Studio • Phase 2</span>
         </div>
       </div>
 
@@ -47,6 +47,12 @@
       </div>
 
       <div class="titlebar-actions">
+        <!-- Player Account & Synchronization Trigger -->
+        <button id="btnAuthAccount" class="icon-btn auth-btn" title="Player Account & Governance Profile">
+          <span id="authIcon">👤</span>
+          <span class="btn-text" id="authButtonText">Sign In</span>
+        </button>
+
         <button id="btnSoundscape" class="icon-btn" title="Toggle Ocean Audio Atmosphere">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <path id="soundIconPath" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
@@ -75,6 +81,13 @@
             <span class="nav-icon">🎮</span>
             <span class="nav-text">Ocean Missions</span>
             <span class="nav-badge">15</span>
+          </button>
+
+          <!-- Admin CMS Item (Visible to Content Editors & Administrators) -->
+          <button class="nav-item" data-view="admin" id="nav-admin" style="display: none;">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">Mission CMS</span>
+            <span class="nav-badge">Admin</span>
           </button>
 
           <div class="nav-divider"></div>
@@ -147,6 +160,7 @@
         <section class="view-panel" id="view-conservation"></section>
         <section class="view-panel" id="view-quiz"></section>
         <section class="view-panel" id="view-about"></section>
+        <section class="view-panel" id="view-admin"></section>
       </main>
     </div>
 
@@ -218,10 +232,13 @@
   <script src="js/modules/conservationModule.js"></script>
   <script src="js/modules/quizModule.js"></script>
   <script src="js/modules/aboutModule.js"></script>
-  <!-- Gamified Simulation Core -->
+  <!-- Phase 2 Client Services & Simulation Core -->
+  <script src="js/services/apiClient.js"></script>
   <script src="js/data/gameScenarios.js"></script>
   <script src="js/modules/gameLogic.js"></script>
   <script src="js/modules/gameStorage.js"></script>
+  <script src="js/modules/authModal.js"></script>
+  <script src="js/modules/adminModule.js"></script>
   <script src="js/modules/gameModule.js"></script>
 
   <!-- Application Orchestrator -->

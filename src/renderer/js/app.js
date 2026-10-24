@@ -6,8 +6,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Initialize Subsystems
   initAmbientCanvas();
+  if (typeof AuthModal !== 'undefined' && AuthModal.init) {
+    AuthModal.init();
+  }
   if (typeof GameModule !== 'undefined' && GameModule.init) {
     GameModule.init();
+  }
+  if (typeof AdminModule !== 'undefined' && AdminModule.init) {
+    AdminModule.init();
   }
   PrinciplesModule.init();
   DepthModule.init();
