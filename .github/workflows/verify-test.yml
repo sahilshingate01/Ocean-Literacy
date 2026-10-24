@@ -7,7 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  verify:
+  desktop-verify:
+    name: Desktop & Frontend Test Suite
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -19,8 +20,68 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Install Desktop Dependencies
+        run: npm ci
+
       - name: Generate Branding Assets
         run: node scripts/generate-icons.js
 
-      - name: Run Test Suite
+      - name: Run Desktop Test Suite
         run: node test/app.test.js
+
+  backend-verify:
+    name: Backend API & Database Test Suite
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ocean_literacy_ci
+          POSTGRES_USER: ocean_test_runner
+          POSTGRES_PASSWORD: ci_test_password_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Server Dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run Prisma Schema Verification & Migrations
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://ocean_test_runner:ci_test_password_2026@localhost:5432/ocean_literacy_ci?schema=public
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+          node prisma/seed.js
+
+      - name: Run Backend Integration & Unit Tests
+        working-directory: server
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          DATABASE_URL: postgresql://ocean_test_runner:ci_test_password_2026@localhost:5432/ocean_literacy_ci?schema=public
+          JWT_SECRET: test_jwt_ci_secret_super_secure_2026
+          JWT_REFRESH_SECRET: test_jwt_refresh_ci_secret_super_secure_2026
+          JWT_ACCESS_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 7d
+          CORS_ORIGIN: http://localhost:3000
+          LEADERBOARD_TIMEZONE: Asia/Kolkata
+        run: npm test

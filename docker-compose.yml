@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ocean-literacy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ocean_literacy_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-ocean_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ocean_secure_pass_2026}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ocean_admin} -d ${POSTGRES_DB:-ocean_literacy_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - ocean_network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ocean-literacy-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ocean_admin}:${POSTGRES_PASSWORD:-ocean_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-ocean_literacy_prod}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-incois_ocean_literacy_jwt_auth_secret_production_2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-incois_ocean_literacy_jwt_refresh_secret_production_2026}
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:8080,app://-}
+      LEADERBOARD_TIMEZONE: Asia/Kolkata
+      INCOIS_PFZ_URL: https://www.incois.gov.in/MarineFisheries/PfzAdvisory
+      INCOIS_OSF_URL: https://www.incois.gov.in/site/services/osf.jsp
+      INCOIS_TEWS_URL: https://tsunami.incois.gov.in/TEWS/about.jsp
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             node prisma/seed.js &&
+             node src/server.js"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/v1/health/liveness || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ocean_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  ocean_network:
+    driver: bridge
