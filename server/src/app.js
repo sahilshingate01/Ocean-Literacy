@@ -19,6 +19,7 @@ const gameRoutes = require('./routes/gameRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const incoisRoutes = require('./routes/incoisRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use(`${config.apiPrefix}/progress`, (req, res, next) => {
 });
 app.use(`${config.apiPrefix}/leaderboards`, leaderboardRoutes);
 app.use(`${config.apiPrefix}/integrations/incois`, incoisRoutes);
+app.use(`${config.apiPrefix}/admin`, adminRoutes);
 app.use(`${config.apiPrefix}/health`, healthRoutes);
 
 // 5. Static Assets Serving for Web Browser & Android Access
