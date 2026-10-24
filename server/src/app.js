@@ -15,6 +15,7 @@ const { requestLogger } = require('./middleware/logger');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/authRoutes');
+const gameRoutes = require('./routes/gameRoutes');
 
 const app = express();
 
@@ -51,11 +52,11 @@ app.use(requestLogger);
 
 // 4. Mount API Routes
 app.use(`${config.apiPrefix}/auth`, authRoutes);
-
-// Dynamic routes will be mounted in Step 4, 5, 6, 7
-app.use(`${config.apiPrefix}/game`, (req, res, next) => {
-  if (app.get('gameRoutes')) return app.get('gameRoutes')(req, res, next);
-  next();
+app.use(`${config.apiPrefix}/game`, gameRoutes);
+app.use(`${config.apiPrefix}/progress`, (req, res, next) => {
+  // Aliased progress endpoint forwarding to gameController
+  req.url = '/progress' + req.url;
+  gameRoutes(req, res, next);
 });
 app.use(`${config.apiPrefix}/leaderboards`, (req, res, next) => {
   if (app.get('leaderboardRoutes')) return app.get('leaderboardRoutes')(req, res, next);
