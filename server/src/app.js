@@ -17,6 +17,8 @@ const { errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const gameRoutes = require('./routes/gameRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
+const incoisRoutes = require('./routes/incoisRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 
 const app = express();
 
@@ -60,18 +62,8 @@ app.use(`${config.apiPrefix}/progress`, (req, res, next) => {
   gameRoutes(req, res, next);
 });
 app.use(`${config.apiPrefix}/leaderboards`, leaderboardRoutes);
-app.use(`${config.apiPrefix}/integrations`, (req, res, next) => {
-  if (app.get('incoisRoutes')) return app.get('incoisRoutes')(req, res, next);
-  next();
-});
-app.use(`${config.apiPrefix}/admin`, (req, res, next) => {
-  if (app.get('adminRoutes')) return app.get('adminRoutes')(req, res, next);
-  next();
-});
-app.use(`${config.apiPrefix}/health`, (req, res, next) => {
-  if (app.get('healthRoutes')) return app.get('healthRoutes')(req, res, next);
-  next();
-});
+app.use(`${config.apiPrefix}/integrations/incois`, incoisRoutes);
+app.use(`${config.apiPrefix}/health`, healthRoutes);
 
 // 5. Static Assets Serving for Web Browser & Android Access
 // Serves src/renderer directly from the backend
