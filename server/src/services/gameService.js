@@ -323,6 +323,10 @@ class GameService {
         isCorrect
       });
 
+      const finalProfile = newlyUnlockedAchievements.length > 0
+        ? await tx.userProfile.findUnique({ where: { userId } })
+        : updatedProfile;
+
       return {
         attemptId: attempt.id,
         scenarioId: attempt.scenarioId,
@@ -338,7 +342,7 @@ class GameService {
           feedback: selectedOption.feedback,
           scienceTakeaway: selectedOption.scienceTakeaway
         },
-        profile: updatedProfile,
+        profile: finalProfile,
         newlyUnlockedAchievements
       };
     });
