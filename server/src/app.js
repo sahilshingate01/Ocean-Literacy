@@ -16,6 +16,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/authRoutes');
 const gameRoutes = require('./routes/gameRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
 
@@ -58,10 +59,7 @@ app.use(`${config.apiPrefix}/progress`, (req, res, next) => {
   req.url = '/progress' + req.url;
   gameRoutes(req, res, next);
 });
-app.use(`${config.apiPrefix}/leaderboards`, (req, res, next) => {
-  if (app.get('leaderboardRoutes')) return app.get('leaderboardRoutes')(req, res, next);
-  next();
-});
+app.use(`${config.apiPrefix}/leaderboards`, leaderboardRoutes);
 app.use(`${config.apiPrefix}/integrations`, (req, res, next) => {
   if (app.get('incoisRoutes')) return app.get('incoisRoutes')(req, res, next);
   next();
