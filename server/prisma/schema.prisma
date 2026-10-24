@@ -1,0 +1,333 @@
+// Prisma schema for Ocean Literacy Phase 2 Platform
+// Authoritative PostgreSQL schema for multi-user, server-authoritative gamified simulation
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  LEARNER
+  CONTENT_EDITOR
+  ADMIN
+}
+
+enum ScenarioStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  FINALIZED
+  ABANDONED
+  EXPIRED
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  ALL_TIME
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  passwordHash       String
+  role               Role               @default(LEARNER)
+  isActive           Boolean            @default(true)
+  isEmailVerified    Boolean            @default(false)
+  leaderboardOptIn   Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  profile            UserProfile?
+  sessions           Session[]
+  refreshTokens      RefreshToken[]
+  attempts           MissionAttempt[]
+  scoreTransactions  ScoreTransaction[]
+  unlockedAchievements UserAchievement[]
+  auditLogs          AuditLog[]
+  emailVerifications EmailVerification[]
+  passwordResets     PasswordReset[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model UserProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  callsign          String
+  activeRoleId      String   @default("fisher")
+  totalScore        Int      @default(0)
+  totalXp           Int      @default(0)
+  level             Int      @default(1)
+  currentStreak     Int      @default(0)
+  maxStreak         Int      @default(0)
+  hazardIncidents   Int      @default(0)
+  missionsCompleted Int      @default(0)
+  soundAtmosphere   Boolean  @default(false)
+  reducedMotion     Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([totalScore(sort: Desc)])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  family    String
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+  @@index([tokenHash])
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model GameRole {
+  id           String   @id // 'fisher', 'captain', 'tourism_operator', 'community_volunteer', 'conservation_ranger'
+  title        String
+  icon         String
+  shortDesc    String
+  detailedDesc String
+  keyServices  Json     // array of strings
+  isArchived   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model MissionScenario {
+  id             String          @id // e.g. 'scen-fish-01'
+  roleId         String
+  status         ScenarioStatus  @default(DRAFT)
+  currentVersion Int             @default(1)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  versions       ScenarioVersion[]
+
+  @@index([roleId])
+  @@index([status])
+}
+
+model ScenarioVersion {
+  id                   String          @id @default(uuid())
+  scenarioId           String
+  versionNumber        Int
+  title                String
+  roleId               String
+  region               String
+  topic                String
+  difficulty           String
+  objective            String
+  situationBriefing    String
+  oceanConditions      Json            // array of condition pills
+  simulationNotice     String
+  options              Json            // array of option objects
+  scientificReferences Json?
+  publishedAt          DateTime?
+  publishedBy          String?
+
+  scenario             MissionScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  attempts             MissionAttempt[]
+
+  @@unique([scenarioId, versionNumber])
+  @@index([scenarioId])
+  @@index([roleId])
+}
+
+model MissionAttempt {
+  id                String          @id @default(uuid())
+  userId            String
+  scenarioId        String
+  scenarioVersionId String
+  status            AttemptStatus   @default(IN_PROGRESS)
+  idempotencyKey    String?         @unique
+  isPractice        Boolean         @default(false)
+  finalScore        Int             @default(0)
+  finalXp           Int             @default(0)
+  startedAt         DateTime        @default(now())
+  expiresAt         DateTime
+  finalizedAt       DateTime?
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenarioVersion   ScenarioVersion @relation(fields: [scenarioVersionId], references: [id], onDelete: Restrict)
+  decisions         DecisionRecord[]
+
+  @@index([userId])
+  @@index([scenarioId])
+  @@index([status])
+  @@index([finalizedAt])
+}
+
+model DecisionRecord {
+  id             String         @id @default(uuid())
+  attemptId      String
+  scenarioId     String
+  optionId       String
+  optionType     String         // 'correct' | 'partial' | 'incorrect' | 'unsafe'
+  pointsDelta    Int
+  earnedXp       Int
+  isHazardous    Boolean        @default(false)
+  feedback       String
+  scienceTakeaway String
+  submittedAt    DateTime       @default(now())
+
+  attempt        MissionAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+}
+
+model ScoreTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  attemptId   String?
+  pointsDelta Int
+  xpDelta     Int
+  reason      String   // 'mission_decision', 'replay_practice', etc.
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Achievement {
+  id          String            @id // 'first_tide', 'ocean_sentinel', etc.
+  title       String
+  icon        String
+  desc        String
+  criteria    String
+  xpReward    Int               @default(0)
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model LeaderboardEntry {
+  id         String            @id @default(uuid())
+  userId     String
+  periodType LeaderboardPeriod
+  periodKey  String            // '2026-10-24', '2026-W43', 'overall'
+  score      Int
+  xp         Int
+  rank       Int?
+  updatedAt  DateTime          @updatedAt
+
+  @@unique([userId, periodType, periodKey])
+  @@index([periodType, periodKey, score(sort: Desc)])
+}
+
+model IncoisConfig {
+  id              String   @id // 'pfz', 'osf', 'tsunami', 'marine_heatwave'
+  serviceName     String
+  officialUrl     String
+  portalUrl       String?
+  endpointUrl     String?
+  cacheTtlSeconds Int      @default(900)
+  isEnabled       Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+}
+
+model ExternalDataCache {
+  id                 String    @id @default(uuid())
+  serviceKey         String
+  payload            Json
+  sourceUrl          String
+  geographicScope    String
+  observationTime    DateTime?
+  forecastValidUntil DateTime?
+  retrievedAt        DateTime  @default(now())
+  expiresAt          DateTime
+  freshnessStatus    String    // 'fresh' | 'cached' | 'stale' | 'simulated' | 'unavailable'
+  validationStatus   String    // 'valid' | 'fallback'
+  isSimulated        Boolean   @default(false)
+
+  @@index([serviceKey])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  details      Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
