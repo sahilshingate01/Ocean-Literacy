@@ -111,7 +111,14 @@ const MarineModule = {
 
     const grid = document.getElementById('marineCardsGrid');
     if (grid) {
-      grid.innerHTML = this.renderCards(list);
+      grid.style.opacity = '0.3';
+      grid.style.transform = 'translateY(6px)';
+      grid.style.transition = 'opacity 160ms ease, transform 160ms ease';
+      setTimeout(() => {
+        grid.innerHTML = this.renderCards(list);
+        grid.style.opacity = '1';
+        grid.style.transform = 'translateY(0)';
+      }, 140);
     }
   },
 

@@ -1,64 +1,83 @@
 /**
  * Ocean Literacy Design System Tokens
- * Curated bioluminescent dark mode palette inspired by marine depths.
+ * Curated Warm Ivory (#E6D5BD), Deep Blue (#226192) & Coral Orange (#EF8557) Palette.
  */
 
 :root {
-  /* Surface Colors */
-  --bg-deep-abyss: #030710;
-  --bg-ocean-dark: #071224;
-  --bg-surface-navy: #0c1c36;
-  --bg-surface-elevated: rgba(14, 32, 60, 0.7);
-  --bg-surface-card: rgba(16, 37, 70, 0.55);
-  --bg-glass-input: rgba(8, 20, 38, 0.75);
+  /* User-Defined Core Theme Tokens */
+  --warm-ivory: #E6D5BD;
+  --deep-blue: #226192;
+  --coral-orange: #EF8557;
 
-  /* Primary Accents & Gradients */
-  --accent-cyan: #00f2fe;
-  --accent-teal: #4facfe;
-  --accent-coral: #ff5e7e;
-  --accent-emerald: #00e676;
-  --accent-sunlight: #ffd166;
-  --accent-lavender: #a18cd1;
+  /* Surface Colors (Harmonic Oceanic Layers) */
+  --bg-deep-abyss: #081422;
+  --bg-ocean-dark: #0c1e33;
+  --bg-surface-navy: #112842;
+  --bg-surface-elevated: rgba(18, 43, 70, 0.78);
+  --bg-surface-card: rgba(17, 40, 67, 0.68);
+  --bg-glass-input: rgba(12, 29, 49, 0.85);
 
-  --grad-biolum: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-  --grad-coral: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
-  --grad-emerald: linear-gradient(135deg, #00e676 0%, #1de9b6 100%);
-  --grad-abyss: linear-gradient(180deg, #071224 0%, #030710 100%);
-  --grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  --grad-glow-pill: linear-gradient(90deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 172, 254, 0.05) 100%);
+  /* Primary Accents & Semantic Mappings */
+  --accent-cyan: #EF8557;        /* Coral Orange primary interactive accent */
+  --neon-cyan: #EF8557;          /* High-visibility highlight */
+  --accent-teal: #226192;        /* Deep Blue ocean base */
+  --accent-coral: #EF8557;       /* Radiant living reef coral */
+  --accent-ivory: #E6D5BD;       /* Royal warm ivory */
+  --accent-deep-blue: #226192;   /* Deep Blue */
+  --accent-emerald: #2cc990;     /* Sea green indicator */
+  --accent-sunlight: #E6D5BD;    /* Warm ivory sunlight */
+  --accent-lavender: #c2b097;
+
+  /* Gradients */
+  --grad-biolum: linear-gradient(135deg, #EF8557 0%, #E6D5BD 100%);
+  --grad-coral: linear-gradient(135deg, #EF8557 0%, #f7a078 100%);
+  --grad-ocean: linear-gradient(135deg, #226192 0%, #153c5b 100%);
+  --grad-emerald: linear-gradient(135deg, #2cc990 0%, #1a8f63 100%);
+  --grad-abyss: linear-gradient(180deg, #0c1e33 0%, #081422 100%);
+  --grad-glass: linear-gradient(135deg, rgba(230, 213, 189, 0.08) 0%, rgba(34, 97, 146, 0.05) 100%);
+  --grad-glow-pill: linear-gradient(90deg, rgba(239, 133, 87, 0.22) 0%, rgba(34, 97, 146, 0.18) 100%);
+  --grad-card-shimmer: linear-gradient(90deg, transparent 0%, rgba(230, 213, 189, 0.08) 50%, transparent 100%);
 
   /* Borders & Glassmorphism */
-  --border-glass: rgba(0, 242, 254, 0.18);
-  --border-glass-subtle: rgba(255, 255, 255, 0.08);
-  --border-glass-bright: rgba(0, 242, 254, 0.45);
-  --backdrop-blur: blur(16px);
+  --border-glass: rgba(230, 213, 189, 0.16);
+  --border-glass-subtle: rgba(230, 213, 189, 0.09);
+  --border-glass-bright: rgba(239, 133, 87, 0.5);
+  --border-blue-glass: rgba(34, 97, 146, 0.45);
+  --backdrop-blur: blur(12px);
 
   /* Glow Shadows */
-  --shadow-cyan-glow: 0 0 25px rgba(0, 242, 254, 0.35);
-  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
-  --shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-cyan-glow: 0 0 25px rgba(239, 133, 87, 0.35);
+  --shadow-coral-glow: 0 0 25px rgba(239, 133, 87, 0.4);
+  --shadow-blue-glow: 0 0 30px rgba(34, 97, 146, 0.5);
+  --shadow-card: 0 10px 30px 0 rgba(4, 11, 20, 0.5);
+  --shadow-elevated: 0 20px 48px rgba(3, 9, 18, 0.7);
 
   /* Typography */
   --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* Text Colors */
-  --text-primary: #f0f6fc;
-  --text-secondary: #9db2ce;
-  --text-muted: #5e779a;
-  --text-bright-cyan: #72f7ff;
+  --text-primary: #F8F5EE;       /* Warm ivory-tinted crisp text */
+  --text-secondary: #C4D5E5;     /* Soft marine blue-grey */
+  --text-muted: #7E97AF;         /* Muted ocean slate */
+  --text-bright-cyan: #EF8557;   /* Coral highlight */
+  --text-ivory: #E6D5BD;
+  --text-coral: #EF8557;
 
   /* Dimensions & Spacing */
   --sidebar-width: 260px;
   --topbar-height: 56px;
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-smooth: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* Smooth GPU-Accelerated Transitions */
+  --anim-speed-fast: 160ms;
+  --anim-speed-normal: 280ms;
+  --transition-fast: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }

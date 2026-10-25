@@ -247,25 +247,25 @@ const QuizModule = {
     const w = canvas.width;
     const h = canvas.height;
 
-    // Background Navy Abyss
+    // Background Deep Blue Abyss
     const bgGrad = ctx.createLinearGradient(0, 0, w, h);
-    bgGrad.addColorStop(0, '#040B18');
-    bgGrad.addColorStop(0.5, '#0B1E38');
-    bgGrad.addColorStop(1, '#051226');
+    bgGrad.addColorStop(0, '#081422');
+    bgGrad.addColorStop(0.5, '#112842');
+    bgGrad.addColorStop(1, '#0c1e33');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Glowing Ornamental Borders
+    // Glowing Ornamental Borders (Coral Orange & Warm Ivory)
     ctx.lineWidth = 4;
-    ctx.strokeStyle = '#00F2FE';
+    ctx.strokeStyle = '#EF8557';
     ctx.strokeRect(24, 24, w - 48, h - 48);
 
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(79, 172, 254, 0.4)';
+    ctx.strokeStyle = 'rgba(230, 213, 189, 0.45)';
     ctx.strokeRect(32, 32, w - 64, h - 64);
 
     // Corner decorative accents
-    ctx.fillStyle = '#00F2FE';
+    ctx.fillStyle = '#EF8557';
     ctx.fillRect(20, 20, 12, 12);
     ctx.fillRect(w - 32, 20, 12, 12);
     ctx.fillRect(20, h - 32, 12, 12);
@@ -274,24 +274,24 @@ const QuizModule = {
     // Header Text
     ctx.textAlign = 'center';
     ctx.font = '600 14px "Outfit", sans-serif';
-    ctx.fillStyle = '#4FACFE';
+    ctx.fillStyle = '#E6D5BD';
     ctx.fillText('UNITED NATIONS DECADE OF OCEAN SCIENCE FOR SUSTAINABLE DEVELOPMENT', w / 2, 80);
 
     ctx.font = '800 32px "Outfit", sans-serif';
-    ctx.fillStyle = '#F0F6FC';
+    ctx.fillStyle = '#F8F5EE';
     ctx.fillText('CERTIFICATE OF OCEAN STEWARDSHIP', w / 2, 130);
 
     ctx.font = '400 15px "Outfit", sans-serif';
-    ctx.fillStyle = '#9DB2CE';
+    ctx.fillStyle = '#C4D5E5';
     ctx.fillText('This official digital credential certifies that', w / 2, 180);
 
     // Candidate Name
     ctx.font = '700 28px "Outfit", sans-serif';
-    ctx.fillStyle = '#00F2FE';
+    ctx.fillStyle = '#EF8557';
     ctx.fillText('Distinguished Ocean Scholar', w / 2, 230);
 
     // Underline
-    ctx.strokeStyle = '#00F2FE';
+    ctx.strokeStyle = '#EF8557';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(w / 2 - 160, 245);
@@ -300,31 +300,31 @@ const QuizModule = {
 
     // Body text
     ctx.font = '400 15px "Outfit", sans-serif';
-    ctx.fillStyle = '#F0F6FC';
+    ctx.fillStyle = '#F8F5EE';
     ctx.fillText('has demonstrated scientific proficiency across the', w / 2, 290);
     ctx.font = '600 16px "Outfit", sans-serif';
-    ctx.fillStyle = '#00E676';
+    ctx.fillStyle = '#E6D5BD';
     ctx.fillText('7 Essential Principles of Ocean Literacy & Planetary Marine Science', w / 2, 315);
 
     // Metrics Pill
     ctx.font = '600 15px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#FFD166';
+    ctx.fillStyle = '#EF8557';
     ctx.fillText(`Evaluation Grade: ${scorePct}% Mastery • Ocean Decade 2021-2030`, w / 2, 370);
 
     // Seals & Signatures
     ctx.font = '400 13px "Outfit", sans-serif';
-    ctx.fillStyle = '#5E779A';
+    ctx.fillStyle = '#7E97AF';
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     ctx.fillText(`Issued: ${dateStr}`, w / 4, 490);
     ctx.fillText('Verification: UNESCO-IOC Framework Verified', (w * 3) / 4, 490);
 
-    // Gold Seal Icon in center
+    // Coral Seal Icon in center
     ctx.beginPath();
     ctx.arc(w / 2, 480, 36, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 242, 254, 0.15)';
+    ctx.fillStyle = 'rgba(239, 133, 87, 0.18)';
     ctx.fill();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = '#00F2FE';
+    ctx.strokeStyle = '#EF8557';
     ctx.stroke();
 
     ctx.font = '24px sans-serif';
