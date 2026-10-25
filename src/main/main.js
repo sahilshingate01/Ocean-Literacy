@@ -11,6 +11,10 @@ let mainWindow = null;
 let tray = null;
 const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'development';
 
+// Enable hardware GPU acceleration for smooth rendering
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+
 // 1. Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -60,12 +64,10 @@ function createMainWindow() {
     minHeight: 640,
     title: 'Ocean Literacy',
     icon: iconPath,
-    backgroundColor: '#050B14',
+    backgroundColor: '#081422',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     frame: process.platform !== 'win32', // custom or native titlebar support
     trafficLightPosition: { x: 16, y: 16 },
-    vibrancy: 'under-window',
-    visualEffectState: 'active',
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       contextIsolation: true,

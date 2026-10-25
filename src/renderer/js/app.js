@@ -232,59 +232,96 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Ambient Floating Bioluminescent Particles Canvas
+// High-Performance Ambient Bioluminescent Particles System (Warm Ivory, Coral Orange & Deep Blue)
 function initAmbientCanvas() {
   const canvas = document.getElementById('ambientCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  let width = canvas.width = window.innerWidth;
-  let height = canvas.height = window.innerHeight;
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
 
-  window.addEventListener('resize', () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-  });
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+  }
 
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Theme palettes: Warm Ivory (#E6D5BD), Coral Orange (#EF8557), Deep Blue (#226192)
+  const particleColors = [
+    { r: 239, g: 133, b: 87 },  // Coral Orange
+    { r: 230, g: 213, b: 189 }, // Warm Ivory
+    { r: 34, g: 97, b: 146 },   // Deep Blue
+    { r: 247, g: 160, b: 120 }, // Light Coral
+    { r: 245, g: 238, b: 228 }  // Pearlescent Ivory
+  ];
+
+  const count = 38;
   const particles = [];
-  const count = 35;
 
   for (let i = 0; i < count; i++) {
+    const col = particleColors[i % particleColors.length];
     particles.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      radius: Math.random() * 2.5 + 0.8,
-      speedY: -(Math.random() * 0.4 + 0.1), // gently floating upward like ocean marine snow
-      speedX: (Math.random() - 0.5) * 0.2,
-      opacity: Math.random() * 0.5 + 0.2,
-      pulse: Math.random() * Math.PI
+      radius: Math.random() * 2.2 + 0.8,
+      speedY: -(Math.random() * 0.35 + 0.08), // Gentle oceanic marine snow drift
+      speedX: (Math.random() - 0.5) * 0.18,
+      opacity: Math.random() * 0.45 + 0.2,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: Math.random() * 0.015 + 0.008,
+      color: col
     });
   }
 
-  function loop() {
+  let animationFrameId = null;
+
+  function render() {
+    if (document.hidden) {
+      animationFrameId = requestAnimationFrame(render);
+      return;
+    }
+
     ctx.clearRect(0, 0, width, height);
 
-    particles.forEach(p => {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
       p.y += p.speedY;
       p.x += p.speedX;
-      p.pulse += 0.02;
+      p.pulse += p.pulseSpeed;
 
-      // Wrap around screen boundaries
-      if (p.y < -10) p.y = height + 10;
-      if (p.x < -10) p.x = width + 10;
-      if (p.x > width + 10) p.x = -10;
+      // Wrap around screen boundaries with graceful margins
+      if (p.y < -12) p.y = height + 12;
+      if (p.x < -12) p.x = width + 12;
+      if (p.x > width + 12) p.x = -12;
 
-      const alpha = p.opacity + Math.sin(p.pulse) * 0.2;
+      const alpha = Math.max(0.04, Math.min(0.65, p.opacity + Math.sin(p.pulse) * 0.22));
+      const outerR = p.radius * 2.6;
+
+      // High-performance soft glow gradient without expensive ctx.shadowBlur
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, outerR);
+      grad.addColorStop(0, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${alpha})`);
+      grad.addColorStop(0.5, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${alpha * 0.45})`);
+      grad.addColorStop(1, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0)`);
+
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 242, 254, ${Math.max(0.05, alpha)})`;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = '#00F2FE';
+      ctx.arc(p.x, p.y, outerR, 0, Math.PI * 2);
       ctx.fill();
-    });
+    }
 
-    requestAnimationFrame(loop);
+    animationFrameId = requestAnimationFrame(render);
   }
 
-  loop();
+  render();
 }
